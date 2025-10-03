@@ -1,11 +1,14 @@
 from flask import Flask
 from database import init_db
+from routes.users import users_bp
 
 app = Flask(__name__)
 
-# Run once at startup
+
 init_db()
 print("✅ Tables ensured.")
+
+app.register_blueprint(users_bp, url_prefix="/users")
 
 @app.route("/")
 def home():
