@@ -13,11 +13,12 @@ import {jwtDecode} from "jwt-decode";
 // Type for JWT payload (adjust fields if your token differs)
 type JwtPayload = {
   username: string;
+  role: string
   exp: number;
 };
 
 export default function NavBar() {
-  const [username, setUsername] = useState<string | null>(null);
+  const [user, setUser] = useState<{ username: string; role: string } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -26,13 +27,13 @@ export default function NavBar() {
     if (token) {
       try {
         const decoded = jwtDecode<JwtPayload>(token);
-        if (decoded.exp * 1000 > Date.now()) setUsername(decoded.username);
+        if (decoded.exp * 1000 > Date.now()) setUser({ username: decoded.username, role: decoded.role });
         else localStorage.removeItem("token");
       } catch {
         localStorage.removeItem("token");
       }
     } else {
-      setUsername(null);
+      setUser(null);
     }
   };
 
@@ -45,7 +46,7 @@ export default function NavBar() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    setUsername(null);
+    setUser(null);
     router.push("/login");
   };
 
@@ -79,11 +80,11 @@ export default function NavBar() {
 
         {/* Right side */}
         <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex gap-3">
-          {username ? (
+          {user ? (
             <>
               <NavigationMenuItem className="list-none">
                 <span className="px-3 py-1 text-white font-semibold">
-                  Hi, {username}
+                  Hi, {user.username}
                 </span>
               </NavigationMenuItem>
 
