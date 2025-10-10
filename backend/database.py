@@ -35,6 +35,7 @@ def init_db():
             name VARCHAR(255) NOT NULL,
             description TEXT,
             price DECIMAL(10,2) NOT NULL,
+            stock NUMBER NOT NULL,
             category VARCHAR(100),
             image_url TEXT
         )
