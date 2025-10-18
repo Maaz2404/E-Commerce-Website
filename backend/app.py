@@ -4,6 +4,7 @@ from database import init_db
 from routes.users import users_bp
 from routes.products import products_bp
 from routes.carts import cart_bp
+from routes.orders import orders_bp
 
 from dotenv import load_dotenv
 import os
@@ -21,6 +22,7 @@ print("✅ Tables ensured.")
 app.register_blueprint(users_bp, url_prefix="/users")
 app.register_blueprint(products_bp, url_prefix="/products")
 app.register_blueprint(cart_bp,url_prefix="/carts")
+app.register_blueprint(orders_bp,url_prefix="/orders")
 
 
 @app.route("/")

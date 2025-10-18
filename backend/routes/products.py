@@ -81,10 +81,11 @@ def get_product(product_id):
 
 
 # 🟢 Add a new product
+
+@products_bp.route("/", methods=["POST"])
 @token_required
 @admin_required
-@products_bp.route("/", methods=["POST"])
-def add_product():
+def add_product(user):
     try:
         data = request.get_json()
         name = data.get("name")
@@ -119,10 +120,11 @@ def add_product():
 
 
 # 🟢 Update product
+
+@products_bp.route("/<int:product_id>", methods=["PUT"])
 @token_required
 @admin_required
-@products_bp.route("/<int:product_id>", methods=["PUT"])
-def update_product(product_id):
+def update_product(user,product_id):
     try:
         data = request.get_json()
         fields = []
@@ -159,10 +161,10 @@ def update_product(product_id):
 
 
 # 🟢 Delete product
+@products_bp.route("/<int:product_id>", methods=["DELETE"])
 @token_required
 @admin_required
-@products_bp.route("/<int:product_id>", methods=["DELETE"])
-def delete_product(product_id):
+def delete_product(user,product_id):
     try:
         conn = get_connection()
         cur = conn.cursor()
@@ -184,9 +186,9 @@ def delete_product(product_id):
 
 
 # 🟢 Decrease stock after an order
-@token_required
 @products_bp.route("/<int:product_id>/decrement_stock", methods=["PATCH"])
-def decrement_stock(product_id):
+@token_required
+def decrement_stock(user,product_id):
     try:
         data = request.get_json()
         quantity = data.get("quantity", 1)
