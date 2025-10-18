@@ -29,6 +29,10 @@ def register():
         """, (email, password_hash, username))
 
         new_user = cur.fetchone()
+        cur.execute(
+        "INSERT INTO carts (user_id) VALUES (%s)", 
+        (new_user["id"],)
+)
         conn.commit()
         cur.close()
         conn.close()
