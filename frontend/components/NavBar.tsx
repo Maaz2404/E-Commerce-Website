@@ -51,7 +51,7 @@ export default function NavBar() {
   };
 
   return (
-    <NavigationMenu className="bg-orange-500 p-4 w-full">
+    <NavigationMenu className="bg-orange-500 p-4 w-screen">
       <div className="relative w-full mx-auto">
         {/* Center */}
         <div className="flex items-center justify-center py-1">

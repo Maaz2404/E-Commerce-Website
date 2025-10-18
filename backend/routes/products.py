@@ -121,15 +121,19 @@ def add_product(user):
 
 # 🟢 Update product
 
+from psycopg2.extras import RealDictCursor
+
 @products_bp.route("/<int:product_id>", methods=["PUT"])
 @token_required
 @admin_required
-def update_product(user,product_id):
+def update_product(user, product_id):
     try:
         data = request.get_json()
-        fields = []
-        values = []
+        if not data:
+            return jsonify({"error": "Missing JSON body"}), 400
 
+        # allow selective updates
+        fields, values = [], []
         for key in ["name", "description", "price", "stock", "category", "image_url"]:
             if key in data:
                 fields.append(f"{key} = %s")
@@ -139,22 +143,29 @@ def update_product(user,product_id):
             return jsonify({"error": "No fields to update"}), 400
 
         values.append(product_id)
-        query = f"UPDATE products SET {', '.join(fields)} WHERE id = %s RETURNING *"
+        query = f"""
+            UPDATE products
+            SET {', '.join(fields)}
+            WHERE id = %s
+            RETURNING id, name, description, price, stock, category, image_url
+        """
 
         conn = get_connection()
-        cur = conn.cursor()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
         cur.execute(query, values)
+        updated_product = cur.fetchone()
 
-        updated = cur.fetchone()
-        if not updated:
+        if not updated_product:
+            conn.rollback()
+            cur.close()
+            conn.close()
             return jsonify({"error": "Product not found"}), 404
 
-        col_names = [desc[0] for desc in cur.description]
         conn.commit()
         cur.close()
         conn.close()
 
-        return jsonify(dict(zip(col_names, updated))), 200
+        return jsonify(updated_product), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

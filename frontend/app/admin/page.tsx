@@ -26,9 +26,11 @@ export default function AdminPage() {
   }, []);
 
   return (
-    <div className="p-10 text-center">
-      <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-      <p className="text-gray-600 mt-4">Only admins can see this.</p>
+    // This container should take the remaining space to the right of the sidebar
+    // It must be full width of the main content area, left-aligned, and allow children to stretch.
+    <div className="p-10 flex flex-col items-start text-left flex-1 w-full max-w-full">
+      <h1 className="text-3xl font-bold w-full">Admin Dashboard</h1>
+      <p className="text-gray-600 mt-4 w-full">Only admins can see this.</p>
     </div>
   );
 }

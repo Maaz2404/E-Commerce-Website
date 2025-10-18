@@ -14,7 +14,20 @@ print("SECRET_KEY:", os.getenv("SECRET_KEY"))
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
-CORS(app, resources={r"/*": {"origins": "*"}})  
+CORS(
+    app,
+    resources={r"/*": {
+        # 1. Be specific with your origin. Browsers block '*'
+        #    when 'Authorization' headers are used.
+        "origins": "*",
+        
+        # 2. Add "DELETE" and "OPTIONS"
+        "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        
+        # 3. This is the most important part you're missing
+        "allow_headers": ["Content-Type", "Authorization"]
+    }}
+)
 
 init_db()
 print("✅ Tables ensured.")
