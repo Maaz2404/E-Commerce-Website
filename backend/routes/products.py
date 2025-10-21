@@ -61,7 +61,7 @@ def get_all_products():
 def get_product(product_id):
     try:
         conn = get_connection()
-        cur = conn.cursor()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
         cur.execute("SELECT * FROM products WHERE id = %s", (product_id,))
         row = cur.fetchone()
@@ -69,15 +69,24 @@ def get_product(product_id):
         if not row:
             return jsonify({"error": "Product not found"}), 404
 
-        col_names = [desc[0] for desc in cur.description]
-        product = dict(zip(col_names, row))
+        product = {
+            "id": row["id"],
+            "name": row["name"],
+            "description": row["description"],
+            "price": float(row["price"]),
+            "stock": int(row["stock"]),
+            "category": row["category"],
+            "image_url": row["image_url"]
+        }
 
         cur.close()
         conn.close()
-        return jsonify(product), 200
+
+        return jsonify({"product": product}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 # 🟢 Add a new product

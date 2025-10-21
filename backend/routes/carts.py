@@ -83,6 +83,13 @@ def add_to_cart(user):
         else:
             cart_id = cart["id"]
 
+        # ✅ Check if product already exists in user's cart
+        cur.execute("SELECT 1 FROM cart_items WHERE cart_id = %s AND product_id = %s", (cart_id, product_id))
+        if cur.fetchone():
+            cur.close()
+            conn.close()
+            return jsonify({"message": "Product already in cart"}), 200
+
         # Add or update item
         cur.execute("""
             INSERT INTO cart_items (cart_id, product_id, quantity)
@@ -97,6 +104,7 @@ def add_to_cart(user):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 # --- Update quantity ---
