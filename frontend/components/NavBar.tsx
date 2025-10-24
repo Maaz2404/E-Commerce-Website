@@ -10,14 +10,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
 
-type JwtPayload = {
+export type JwtPayload = {
+  user_id: number;
   username: string;
   role: string;
   exp: number;
 };
 
 export default function NavBar() {
-  const [user, setUser] = useState<{ username: string; role: string } | null>(
+  const [user, setUser] = useState<{user_id: number; username: string; role: string } | null>(
     null
   );
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function NavBar() {
         try {
           const decoded = jwtDecode<JwtPayload>(token);
           if (decoded.exp * 1000 > Date.now())
-            setUser({ username: decoded.username, role: decoded.role });
+            setUser({user_id:decoded.user_id, username: decoded.username, role: decoded.role });
           else localStorage.removeItem("token");
         } catch {
           localStorage.removeItem("token");

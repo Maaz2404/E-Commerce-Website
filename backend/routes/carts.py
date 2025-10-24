@@ -25,7 +25,7 @@ def get_cart(user):
 
         # fetch items
         cur.execute("""
-            SELECT ci.id, p.name, p.price, ci.quantity, (p.price * ci.quantity) AS total
+            SELECT ci.id, p.name, ci.product_id, p.price, ci.quantity, (p.price * ci.quantity) AS total
             FROM cart_items ci
             JOIN products p ON ci.product_id = p.id
             WHERE ci.cart_id = %s
@@ -36,6 +36,7 @@ def get_cart(user):
     {
         "item_id": row["id"],
         "product_name": row["name"],
+        "product_id": row["product_id"],
         "price": float(row["price"]),
         "quantity": row["quantity"],
         "total": float(row["total"])
@@ -138,24 +139,43 @@ def update_quantity(user, product_id):
 @cart_bp.route("/remove/<int:product_id>", methods=["DELETE"])
 @token_required
 def remove_item(user, product_id):
+    conn = None
+    cur = None
     try:
         conn = get_connection()
         cur = conn.cursor()
 
+        # Check if item exists in user's cart
+        cur.execute("""
+            SELECT ci.id 
+            FROM cart_items ci
+            JOIN carts c ON ci.cart_id = c.id
+            WHERE ci.product_id = %s AND c.user_id = %s
+        """, (product_id, user["id"]))
+        
+        if not cur.fetchone():
+            return jsonify({"error": "Item not found in cart"}), 404
+
+        # Delete the item
         cur.execute("""
             DELETE FROM cart_items
             WHERE product_id = %s AND cart_id = (SELECT id FROM carts WHERE user_id = %s)
         """, (product_id, user["id"]))
 
         conn.commit()
-        cur.close()
-        conn.close()
-
+        
         return jsonify({"message": "Product removed from cart"}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
+        if conn:
+            conn.rollback()
+        return jsonify({"error": "Failed to remove item from cart"}), 500
+    
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 # --- Clear cart ---
 @cart_bp.route("/clear", methods=["DELETE"])
