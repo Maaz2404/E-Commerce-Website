@@ -19,7 +19,7 @@ export interface Cart {
   total_price: number;
 }
 
-const baseURL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000";
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 export default function CartPage() {
   const router = useRouter();
