@@ -24,7 +24,7 @@ export default function AdminLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-gray-100 relative">
+      <div className="top-0 left-0 flex min-h-screen pt-10 mt-10 bg-gray-100 relative">
         {/* Sidebar */}
         <aside
           className={cn(
