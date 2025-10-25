@@ -59,7 +59,7 @@ export default function NavBar() {
         {/* Logo */}
         <div className="flex items-center flex-shrink-0">
           <Link href="/" className="text-2xl font-bold text-white">
-            Daraz
+            ShopUUU
           </Link>
         </div>
 
