@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Pencil, Trash2, Check, X, PlusCircle } from "lucide-react";
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<any[] | null>(null);

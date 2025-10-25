@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS support_tickets (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'open',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

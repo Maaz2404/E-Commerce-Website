@@ -20,6 +20,7 @@ export default function AdminLayout({
     { name: "Products", href: "/admin/products" },
     { name: "Orders", href: "/admin/orders" },
     { name: "Users", href: "/admin/users" },
+    { name: "Support Tickets", href: "/admin/support" },
   ];
 
   return (
