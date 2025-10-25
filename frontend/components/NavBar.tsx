@@ -88,6 +88,12 @@ export default function NavBar() {
               </Link>
             </NavigationMenuItem>
 
+            <NavigationMenuItem className="list-none">
+              <Link href="/support" className="font-medium text-white hover:text-gray-200 transition">
+                Support
+              </Link>
+            </NavigationMenuItem>
+
             {user ? (
               <>
                 {/* Admin Dashboard */}

@@ -34,7 +34,7 @@ export default function Login() {
       setLoading(true);
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/login`,
+        `http://localhost:5000/users/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
