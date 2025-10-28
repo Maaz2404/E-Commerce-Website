@@ -20,7 +20,8 @@ CORS(
     resources={r"/*": {
         # 1. Be specific with your origin. Browsers block '*'
         #    when 'Authorization' headers are used.
-        "origins": "*",
+        "origins": ["http://localhost:3000",
+                    "https://e-commerce-website-d8c6.vercel.app/"],
         
         # 2. Add "DELETE" and "OPTIONS"
         "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
