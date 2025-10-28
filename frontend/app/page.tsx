@@ -1,13 +1,13 @@
 import ProductCard from "@/components/ProductCard";
 import { ProductInput } from "@/components/ProductCard";
 
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default async function Home() {
   const res = await fetch(`${baseURL}/products`);
   const productsData = await res.json();
   const products: ProductInput[] = productsData?.products ?? [];
-
+  console.log("API Base URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
   return (
     <div className="pt-20 m-5 flex flex-col items-center">
       <h1 className="text-2xl font-bold mb-5">Welcome to the E-Commerce Website</h1>
@@ -15,6 +15,8 @@ export default async function Home() {
         {products.map((product: ProductInput) => (
           <ProductCard key={product.id} {...product} />
         ))}
+        
+
       </div>
     </div>
   );

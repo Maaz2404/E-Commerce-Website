@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { ProductInput } from "@/components/ProductCard";
 import Image from "next/image";
 
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 interface ProductPageProps {
   id: number | string;
