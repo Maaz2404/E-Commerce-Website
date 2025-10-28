@@ -5,6 +5,7 @@ from routes.users import users_bp
 from routes.products import products_bp
 from routes.carts import cart_bp
 from routes.orders import orders_bp
+import gunicorn
 
 from dotenv import load_dotenv
 import os

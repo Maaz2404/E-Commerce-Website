@@ -13,4 +13,5 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "pyjwt>=2.10.1",
     "python-dotenv>=1.1.1",
+    "waitress>=3.0.2",
 ]
