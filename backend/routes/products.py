@@ -5,7 +5,7 @@ from auth_middleware import token_required, admin_required
 
 products_bp = Blueprint("products", __name__)
 
-@products_bp.route("/", methods=["GET"])
+@products_bp.route("/", methods=["GET"],strict_slashes=False)
 def get_all_products():
     try:
         conn = get_connection()
