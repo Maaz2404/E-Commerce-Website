@@ -1,10 +1,9 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { jwtDecode, JwtPayload } from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
-
-interface MyJwtPayload extends JwtPayload {
+interface MyJwtPayload {
   username: string;
   role: string;
   exp: number;
