@@ -77,6 +77,31 @@ def init_db():
             quantity INT NOT NULL CHECK (quantity > 0),
             added_at TIMESTAMP DEFAULT NOW()
         )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS payment_methods (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+        method_type VARCHAR(50) NOT NULL,
+        balance NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+        )
+
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS payments (
+        id SERIAL PRIMARY KEY,
+        order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+        payment_method_id INTEGER NOT NULL REFERENCES payment_methods(id),
+
+        amount NUMERIC(10,2) NOT NULL,
+        status VARCHAR(30) NOT NULL DEFAULT 'success',        -- 'success', 'failed', etc.
+        created_at TIMESTAMP DEFAULT NOW()
+        )
+
         """
         
     ]
