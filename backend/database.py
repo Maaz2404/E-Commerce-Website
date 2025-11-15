@@ -155,6 +155,23 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_reviews_product_id
         ON reviews (product_id);
 
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS support_messages (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,  -- the user who owns this conversation
+        sender_type VARCHAR(10) NOT NULL CHECK (sender_type IN ('user','admin')),  -- who sent the message
+        message TEXT NOT NULL,
+        is_read BOOLEAN DEFAULT FALSE,  -- unread by default
+        created_at TIMESTAMP DEFAULT NOW()
+        );
+
+    -- Index for fast lookup per user
+    CREATE INDEX IF NOT EXISTS idx_support_messages_user_id ON support_messages (user_id);
+
+    -- Optional: index for unread messages for quick admin dashboard queries
+    CREATE INDEX IF NOT EXISTS idx_support_messages_unread ON support_messages (user_id, is_read) WHERE is_read = FALSE;
+
         """
         
     ]

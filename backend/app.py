@@ -8,6 +8,7 @@ from routes.orders import orders_bp
 from routes.payments import payments_bp
 from routes.coupons import coupons_bp
 from routes.reviews import reviews_bp
+from routes.support import support_bp
 import gunicorn
 
 from dotenv import load_dotenv
@@ -44,6 +45,7 @@ app.register_blueprint(orders_bp,url_prefix="/orders")
 app.register_blueprint(payments_bp,url_prefix="/payments")
 app.register_blueprint(coupons_bp,url_prefix="/coupons")
 app.register_blueprint(reviews_bp,url_prefix="/reviews")
+app.register_blueprint(support_bp,url_prefix="/support")
 
 @app.route("/")
 def home():
