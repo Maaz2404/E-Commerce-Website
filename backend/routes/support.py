@@ -181,7 +181,7 @@ def fetch_unread_messages(admin):
 @support_bp.route("/messages/user/<int:user_id>", methods=["GET"])
 @token_required
 @admin_required
-def fetch_user_messages(admin, user_id):
+def fetch_specific_user_messages(admin, user_id):
     try:
         conn = get_connection()
         cur = conn.cursor()
