@@ -131,6 +131,30 @@ def init_db():
         UNIQUE (coupon_id, user_id)   -- ensures one redemption per user
         )
 
+        """,
+        """
+        CREATE TABLE  IF NOT EXISTS reviews (
+        id SERIAL PRIMARY KEY,
+
+        product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+        rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+
+        comment TEXT,
+
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+    );
+
+        -- a user can review a product only once
+        CREATE UNIQUE INDEX IF NOT EXISTS unique_user_review_per_product
+        ON reviews (product_id, user_id);
+
+        -- fast lookup for product ratings
+        CREATE INDEX IF NOT EXISTS idx_reviews_product_id
+        ON reviews (product_id);
+
         """
         
     ]
