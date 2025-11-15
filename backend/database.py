@@ -102,6 +102,35 @@ def init_db():
         created_at TIMESTAMP DEFAULT NOW()
         )
 
+        """,
+    """
+   
+    CREATE TABLE IF NOT EXISTS coupons (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(50) UNIQUE NOT NULL,
+        discount_type VARCHAR(20) NOT NULL,       -- 'percentage' or 'flat'
+        discount_value NUMERIC(10,2) NOT NULL,
+        max_uses INT NOT NULL ,
+        uses_left INT NOT NULL ,
+        status VARCHAR(20) NOT NULL DEFAULT 'active',  -- 'active' or 'expired'
+        start_date DATE,
+        end_date DATE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+        )
+    """,
+    """
+
+    CREATE TABLE IF NOT EXISTS coupon_redemptions (
+        id SERIAL PRIMARY KEY,
+        coupon_id INT NOT NULL REFERENCES coupons(id) ON DELETE CASCADE,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+        discount_applied NUMERIC(10,2) NOT NULL,
+        redeemed_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE (coupon_id, user_id)   -- ensures one redemption per user
+        )
+
         """
         
     ]

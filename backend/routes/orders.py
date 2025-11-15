@@ -1,5 +1,4 @@
-# routes/orders.py
-
+from utils.place_order import create_order_for_user,validate_coupon
 from flask import Blueprint, request, jsonify
 from database import get_connection
 from auth_middleware import token_required, admin_required
@@ -12,68 +11,30 @@ orders_bp = Blueprint("orders", __name__)
 @token_required
 def create_order(user):
     try:
+        data = request.get_json() or {}
+        coupon_id = data.get("coupon_id")  # Optional coupon
         user_id = user["id"]
+
         conn = get_connection()
         cur = conn.cursor()
 
-        # Get user cart
-        cur.execute("SELECT id FROM carts WHERE user_id = %s", (user_id,))
-        cart = cur.fetchone()
-        if not cart:
-            return jsonify({"error": "Cart not found"}), 404
+        # Use helper to place order
+        order_info = create_order_for_user(user_id, cur, conn, coupon_id=coupon_id,validate_coupon_fn=validate_coupon)
 
-        cart_id = cart["id"]
-
-        # Get items from cart
-        cur.execute("""
-            SELECT ci.product_id, ci.quantity, p.price
-            FROM cart_items ci
-            JOIN products p ON ci.product_id = p.id
-            WHERE ci.cart_id = %s
-        """, (cart_id,))
-        items = cur.fetchall()
-
-        if not items:
-            return jsonify({"error": "Cart is empty"}), 400
-
-        # Calculate total
-        total_amount = sum(float(item["price"]) * item["quantity"] for item in items)
-
-        # Create order
-        cur.execute("""
-            INSERT INTO orders (user_id, total_amount)
-            VALUES (%s, %s)
-            RETURNING id, status, created_at
-        """, (user_id, total_amount))
-        order = cur.fetchone()
-        order_id = order["id"]
-
-        # Insert order items
-        for item in items:
-            cur.execute("""
-                INSERT INTO order_items (order_id, product_id, quantity, unit_price)
-                VALUES (%s, %s, %s, %s)
-            """, (order_id, item["product_id"], item["quantity"], float(item["price"])))
-
-        # Clear the user's cart
-        cur.execute("DELETE FROM cart_items WHERE cart_id = %s", (cart_id,))
         conn.commit()
-
         cur.close()
         conn.close()
 
         return jsonify({
             "message": "Order created successfully",
-            "order_id": order_id,
-            "status": order["status"],
-            "total_amount": total_amount,
-            "created_at": order["created_at"]
+            "order_id": order_info["order_id"],
+            "total_amount": order_info["total_amount"],
+            "items": order_info["items"]
         }), 201
 
     except Exception as e:
         conn.rollback()
         return jsonify({"error": str(e)}), 500
-
 
 # 2️⃣ Get All Orders for Logged-In User
 @orders_bp.route("/", methods=["GET"])

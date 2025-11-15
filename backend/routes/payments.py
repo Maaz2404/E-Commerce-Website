@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify
 from database import get_connection
 from auth_middleware import token_required, admin_required
 from datetime import datetime
+from utils.place_order import create_order_for_user,validate_coupon
 
 payments_bp = Blueprint("payments", __name__)
 
@@ -136,13 +137,13 @@ def delete_payment_method(user, method_id):
 
 
 
-# 5️⃣ Make Payment for an Order
-@payments_bp.route("/pay/<int:order_id>", methods=["POST"])
+@payments_bp.route("/pay", methods=["POST"])
 @token_required
-def make_payment(user, order_id):
+def make_payment(user):
     try:
         data = request.get_json()
         method_id = data.get("payment_method_id")
+        coupon_code = data.get("coupon_code")  # optional
 
         if not method_id:
             return jsonify({"error": "payment_method_id required"}), 400
@@ -150,23 +151,7 @@ def make_payment(user, order_id):
         conn = get_connection()
         cur = conn.cursor()
 
-        # Get order
-        cur.execute("""
-            SELECT id, user_id, total_amount, status
-            FROM orders
-            WHERE id = %s AND user_id = %s
-        """, (order_id, user["id"]))
-        order = cur.fetchone()
-
-        if not order:
-            return jsonify({"error": "Order not found"}), 404
-
-        if order["status"] == "paid":
-            return jsonify({"error": "Order already paid"}), 400
-
-        total = float(order["total_amount"])
-
-        # Get payment method
+        # 1️⃣ Get payment method
         cur.execute("""
             SELECT id, balance
             FROM payment_methods
@@ -177,62 +162,100 @@ def make_payment(user, order_id):
         if not method:
             return jsonify({"error": "Payment method not found"}), 404
 
-        if method["balance"] < total:
-            return jsonify({"error": "Insufficient balance"}), 400
+        try:
+            # 2️⃣ Build order using helper
+            order_data = create_order_for_user(
+                user_id=user["id"],
+                cur=cur,
+                conn=conn,
+                coupon_code=coupon_code,
+                validate_coupon_fn=validate_coupon
+            )
 
-        # Deduct balance
-        cur.execute("""
-            UPDATE payment_methods
-            SET balance = balance - %s, updated_at = NOW()
-            WHERE id = %s
-        """, (total, method_id))
+            order_id = order_data["order_id"]
+            items = order_data["items"]
+            total_amount = float(order_data["total_amount"])
+            discount_amount = float(order_data.get("discount_amount", 0))
+            coupon_id = order_data.get("coupon_id")
 
-        # Check and decrement stock for all order items
-        cur.execute("""
-            SELECT product_id, quantity
-            FROM order_items
-            WHERE order_id = %s
-        """, (order_id,))
-        items = cur.fetchall()
+            final_amount = total_amount
 
-        for item in items:
+            # 3️⃣ Check payment balance
+            if method["balance"] < final_amount:
+                raise Exception("Insufficient balance")
+
+            # 4️⃣ Deduct balance
             cur.execute("""
-                UPDATE products
-                SET stock = stock - %s
-                WHERE id = %s AND stock >= %s
-                RETURNING id
-            """, (item["quantity"], item["product_id"], item["quantity"]))
-            if not cur.fetchone():
-                conn.rollback()
-                return jsonify({"error": f"Insufficient stock for product {item['product_id']}"}), 400
+                UPDATE payment_methods
+                SET balance = balance - %s, updated_at = NOW()
+                WHERE id = %s
+            """, (final_amount, method_id))
 
-        # Record payment
-        cur.execute("""
-            INSERT INTO payments (order_id, payment_method_id, amount, status)
-            VALUES (%s, %s, %s, 'success')
-            RETURNING id, amount, status, created_at
-        """, (order_id, method_id, total))
-        payment = cur.fetchone()
+            # 5️⃣ Update stock
+            for item in items:
+                cur.execute("""
+                    UPDATE products
+                    SET stock = stock - %s
+                    WHERE id = %s AND stock >= %s
+                    RETURNING id
+                """, (item["quantity"], item["product_id"], item["quantity"]))
 
-        # Update order status
-        cur.execute("""
-            UPDATE orders
-            SET status = 'paid', updated_at = NOW()
-            WHERE id = %s
-        """, (order_id,))
+                if not cur.fetchone():
+                    raise Exception(f"Insufficient stock for product {item['product_id']}")
 
-        conn.commit()
-        cur.close()
-        conn.close()
+            # 6️⃣ Record payment
+            cur.execute("""
+                INSERT INTO payments (order_id, payment_method_id, amount, status)
+                VALUES (%s, %s, %s, 'success')
+                RETURNING id, amount, status, created_at
+            """, (order_id, method_id, final_amount))
+            payment = cur.fetchone()
 
-        return jsonify({
-            "message": "Payment successful",
-            "payment": payment
-        }), 201
+            # 7️⃣ Mark order as paid
+            cur.execute("""
+                UPDATE orders
+                SET status = 'paid', updated_at = NOW()
+                WHERE id = %s
+            """, (order_id,))
+
+            # 8️⃣ Record coupon redemption
+            if coupon_id:
+                cur.execute("""
+                    INSERT INTO coupon_redemptions
+                        (coupon_id, user_id, order_id, discount_applied)
+                    VALUES (%s, %s, %s, %s)
+                """, (coupon_id, user["id"], order_id, discount_amount))
+
+                # decrement uses_left
+                cur.execute("""
+                    UPDATE coupons
+                    SET uses_left = uses_left - 1
+                    WHERE id = %s
+                """, (coupon_id,))
+
+            conn.commit()
+            cur.close()
+            conn.close()
+
+            return jsonify({
+                "message": "Payment successful",
+                "order_id": order_id,
+                "payment": payment,
+                "total_before_discount": total_amount,
+                "discount_applied": discount_amount,
+                "final_amount": final_amount,
+                "coupon_applied": bool(coupon_id),
+            }), 201
+
+        except Exception as e:
+            conn.rollback()
+            cur.close()
+            conn.close()
+            return jsonify({"error": str(e)}), 400
 
     except Exception as e:
-        conn.rollback()
         return jsonify({"error": str(e)}), 500
+
 
 
 # 6️⃣ Change Payment Status (Admin Only)
