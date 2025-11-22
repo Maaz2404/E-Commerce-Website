@@ -62,16 +62,11 @@ def create_coupon(user):
         return jsonify({"error": str(e)}), 500
 
 # ---------------------------------------------------------
-# 1) GET ALL ACTIVE COUPONS (ADMIN ONLY)
+# 1) GET ALL ACTIVE COUPONS 
 # ---------------------------------------------------------
 @coupons_bp.route("/active", methods=["GET"])
-@token_required
-@admin_required
-def get_active_coupons(user):
+def get_active_coupons():
     try:
-        if user.get("role") != "admin":
-            return jsonify({"error": "Admin access only"}), 403
-
         conn = get_connection()
         cur = conn.cursor()
 
