@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify,current_app
 from database import get_connection
 import bcrypt
+from auth_middleware import token_required,admin_required
 import os
 
 
@@ -89,6 +90,33 @@ def login():
         return jsonify({
             "message": "Login successful",
             "token": token
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@users_bp.route("/all-users", methods=["GET"])
+@token_required
+@admin_required
+def get_all_normal_users(admin):
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT id, email, username, role, created_at
+            FROM users
+            WHERE role = 'user'
+            ORDER BY created_at DESC
+        """)
+
+        users = cur.fetchall()
+
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "users": users
         }), 200
 
     except Exception as e:

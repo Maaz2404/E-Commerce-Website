@@ -129,3 +129,27 @@ def delete_review(user, review_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+    
+@reviews_bp.route("/product/<int:product_id>", methods=["GET"])
+def get_reviews(product_id):
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT r.id, r.product_id, r.user_id, u.username, r.rating, r.comment, r.created_at, r.updated_at
+            FROM reviews r
+            JOIN users u ON u.id = r.user_id
+            WHERE r.product_id = %s
+            ORDER BY r.created_at DESC
+        """, (product_id,))
+
+        reviews = cur.fetchall()
+
+        cur.close()
+        conn.close()
+
+        return jsonify({"reviews": reviews}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

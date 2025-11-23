@@ -137,44 +137,32 @@ def fetch_user_chat(admin, user_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# 6️⃣ Fetch unread messages for admin dashboard
-@support_bp.route("/messages/unread", methods=["GET"])
+# get unread msg count for all users
+@support_bp.route("/messages/unread-counts", methods=["GET"])
 @token_required
 @admin_required
-def fetch_unread_messages(admin):
+def unread_counts(admin):
     try:
         conn = get_connection()
         cur = conn.cursor()
 
-        # fetch all unread messages from users
         cur.execute("""
-            SELECT user_id, id AS message_id, message, created_at
+            SELECT user_id, COUNT(*) AS unread
             FROM support_messages
             WHERE sender_type = 'user' AND is_read = FALSE
-            ORDER BY created_at ASC
+            GROUP BY user_id
         """)
-        messages = cur.fetchall()
 
-        # group messages by user_id
-        grouped = {}
-        for msg in messages:
-            uid = msg["user_id"]
-            if uid not in grouped:
-                grouped[uid] = []
-            grouped[uid].append({
-                "message_id": msg["message_id"],
-                "message": msg["message"],
-                "created_at": msg["created_at"]
-            })
+        rows = cur.fetchall()
 
         cur.close()
         conn.close()
 
-        return jsonify({"unread_messages": grouped}), 200
+        return jsonify({"counts": rows}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 # 7️⃣ Fetch messages for a specific user (admin) and mark them as read
