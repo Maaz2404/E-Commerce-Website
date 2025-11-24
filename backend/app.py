@@ -25,6 +25,7 @@ CORS(
         # 1. Be specific with your origin. Browsers block '*'
         #    when 'Authorization' headers are used.
         "origins": ["http://localhost:3000",
+                    "https://congenial-disco-5gqgjrqj4wpgf6xv-3000.app.github.dev",
                     "https://e-commerce-website-d8c6.vercel.app"],
         
         # 2. Add "DELETE" and "OPTIONS"
