@@ -33,7 +33,8 @@ CORS(
         
         # 3. This is the most important part you're missing
         "allow_headers": ["Content-Type", "Authorization"]
-    }}
+    }},
+     supports_credentials=True
 )
 
 init_db()
@@ -53,4 +54,4 @@ def home():
     return {"msg": "Flask + DB schema ready"}
 
 if __name__ == "__main__":
-    app.run(port=5000,debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
