@@ -74,7 +74,7 @@ export default function AdminLayout({
         )}
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col md:ml-64">
+        <div className="flex-1 flex flex-col">
           <header className="h-14 bg-white border-b flex items-center justify-between px-6 shadow-sm">
             <div className="flex items-center gap-2">
               {/* Hamburger button */}
@@ -89,7 +89,7 @@ export default function AdminLayout({
             <div className="text-sm text-gray-600">Welcome, Admin</div>
           </header>
 
-          <main className="flex-1 flex items-center  min-h-[calc(100vh-3.5rem)] p-6">
+          <main className="flex-1 flex flex-col min-h-[calc(100vh-3.5rem)] p-6">
             {children}
           </main>
         </div>
