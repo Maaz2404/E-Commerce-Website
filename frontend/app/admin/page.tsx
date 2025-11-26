@@ -61,55 +61,35 @@ export default function AdminPage() {
     );
 
   return (
-    <div className="p-10 flex flex-col items-start text-left flex-1 w-full max-w-full">
-
-      <h1 className="text-3xl font-bold w-full text-center">
-        Admin Dashboard
-      </h1>
-      <p className="text-gray-600 mt-2 mb-6 w-full text-center">
-        Quick overview of platform stats
-      </p>
+    <div className="p-8 flex flex-col gap-6 w-full">
+      <div className="w-full text-center">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <p className="text-gray-600 mt-2">Quick overview of platform stats</p>
+      </div>
 
       {/* TOP ROW */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-
-        <DashboardCard title="Total Users" value={stats.users.total} color="bg-blue-500" />
-
-        <DashboardCard title="Admins" value={stats.users.admins} color="bg-purple-500" />
-
-        <DashboardCard title="Total Orders" value={stats.orders.total_orders} color="bg-green-500" />
-
-        <DashboardCard
-          title="Revenue (All Time)"
-          value={`$${stats.orders.total_revenue}`}
-          color="bg-orange-500"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+        <DashboardCard title="Total Users" value={stats.users.total} accent="bg-blue-500" />
+        <DashboardCard title="Admins" value={stats.users.admins} accent="bg-purple-500" />
+        <DashboardCard title="Total Orders" value={stats.orders.total_orders} accent="bg-green-500" />
+        <DashboardCard title="Revenue (All Time)" value={`$${stats.orders.total_revenue}`} accent="bg-orange-500" />
       </div>
 
       {/* SECOND ROW */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full mt-6">
-
-        <DashboardCard title="Pending Orders" value={stats.orders.pending_orders} color="bg-yellow-500" />
-
-        <DashboardCard title="Completed Orders" value={stats.orders.completed_orders} color="bg-emerald-500" />
-
-        <DashboardCard title="Products" value={stats.products.total_products} color="bg-indigo-500" />
-
-        <DashboardCard title="Out of Stock" value={stats.products.out_of_stock} color="bg-red-500" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full mt-6">
+        <DashboardCard title="Pending Orders" value={stats.orders.pending_orders} accent="bg-yellow-400" />
+        <DashboardCard title="Completed Orders" value={stats.orders.completed_orders} accent="bg-emerald-500" />
+        <DashboardCard title="Products" value={stats.products.total_products} accent="bg-indigo-500" />
+        <DashboardCard title="Out of Stock" value={stats.products.out_of_stock} accent="bg-red-500" />
       </div>
 
       {/* THIRD ROW */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full mt-6">
-
-        <DashboardCard title="Active Coupons" value={stats.coupons.active} color="bg-teal-500" />
-
-        <DashboardCard title="Expired Coupons" value={stats.coupons.expired} color="bg-gray-600" />
-
-        <DashboardCard title="Unread Support" value={stats.support.unread_messages} color="bg-pink-500" />
-
-        <DashboardCard title="Support Tickets" value={stats.support.total_support_messages} color="bg-slate-500" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full mt-6">
+        <DashboardCard title="Active Coupons" value={stats.coupons.active} accent="bg-teal-500" />
+        <DashboardCard title="Expired Coupons" value={stats.coupons.expired} accent="bg-zinc-500" />
+        <DashboardCard title="Unread Support" value={stats.support.unread_messages} accent="bg-pink-500" />
+        <DashboardCard title="Support Tickets" value={stats.support.total_support_messages} accent="bg-slate-500" />
       </div>
-
     </div>
   );
 }
@@ -118,18 +98,19 @@ export default function AdminPage() {
 function DashboardCard({
   title,
   value,
-  color,
+  accent,
 }: {
   title: string;
   value: any;
-  color: string;
+  accent: string;
 }) {
   return (
-    <div
-      className={`${color} text-white rounded-xl p-4 shadow flex flex-col justify-center`}
-    >
-      <span className="text-sm opacity-90">{title}</span>
-      <span className="text-2xl font-bold mt-1">{value}</span>
+    <div className="bg-white rounded-xl p-4 shadow-sm flex items-center gap-4">
+      <div className={`w-2 h-12 rounded ${accent}`} />
+      <div className="flex-1">
+        <span className="text-sm text-gray-500">{title}</span>
+        <div className="text-2xl font-bold mt-1 text-gray-900">{value}</div>
+      </div>
     </div>
   );
 }

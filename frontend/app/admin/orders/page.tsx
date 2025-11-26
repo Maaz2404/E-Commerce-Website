@@ -99,10 +99,10 @@ export default function OrdersPage() {
 
   return (
     <div className="p-6 w-full">
-      <h1 className="text-xl font-bold mb-4">All Orders</h1>
+      <h1 className="text-2xl font-bold mb-4">All Orders</h1>
 
       <div className="overflow-x-auto w-full">
-        <table className="min-w-full border border-gray-300">
+        <table className="w-full table-fixed border border-gray-200">
           <thead>
             <tr className="bg-gray-100">
               <th className="p-3 border">Order ID</th>
@@ -134,7 +134,7 @@ export default function OrdersPage() {
                           [order.id]: e.target.value,
                         }))
                       }
-                      className="border px-2 py-1 rounded capitalize"
+                      className="border px-2 py-1 rounded capitalize bg-white"
                     >
                       {statusOptions.map((s) => (
                         <option key={s} value={s}>
@@ -153,7 +153,7 @@ export default function OrdersPage() {
                     {changed ? (
                       <button
                         onClick={() => saveStatus(order.id)}
-                        className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition"
+                        className="bg-orange-500 text-white px-3 py-1 rounded hover:bg-orange-600 transition"
                       >
                         Save
                       </button>

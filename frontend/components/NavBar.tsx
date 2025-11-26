@@ -147,13 +147,7 @@ export default function NavBar() {
                     Order History
                   </Link>
 
-                  <Link
-                    href="/profile"
-                    className="block px-4 py-2 hover:bg-gray-100"
-                    onClick={() => setDropdownOpen(false)}
-                  >
-                    Profile
-                  </Link>
+                  
 
                   <button
                     className="w-full text-left px-4 py-2 hover:bg-gray-100"

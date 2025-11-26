@@ -55,47 +55,47 @@ export default function ProductView({ id }: ProductPageProps) {
   }, [product]);
 
   const fetchReviews = async () => {
-  try {
-    const res = await fetch(`${baseURL}/reviews/product/${id}`);
-    const data = await res.json();
+    try {
+      const res = await fetch(`${baseURL}/reviews/product/${id}`);
+      const data = await res.json();
 
-    const token = localStorage.getItem("token");
-    let currentUserId = null;
+      const token = localStorage.getItem("token");
+      let currentUserId = null;
 
-    if (token) {
-      const decoded: any = JSON.parse(atob(token.split(".")[1]));
-      currentUserId = decoded.user_id;
+      if (token) {
+        const decoded: any = JSON.parse(atob(token.split(".")[1]));
+        currentUserId = decoded.user_id;
+      }
+
+      const list = data.reviews || [];
+
+      setReviews(list);
+
+      const myReview = list.find((r: any) => r.user_id === currentUserId) || null;
+
+      setUserReview(myReview);
+      setUserReviewId(myReview?.id || null);
+
+      // prefill form for update
+      if (myReview) {
+        setRatingInput(myReview.rating);
+        setCommentInput(myReview.comment || "");
+      }
+
+      // ⭐ FIXED AVG RATING (using list, NOT reviews state)
+      if (list.length > 0) {
+        const total = list.reduce((sum: number, r: any) => sum + r.rating, 0);
+        setAvgRating(total / list.length);
+        setTotalReviews(list.length);
+      } else {
+        setAvgRating(0);
+        setTotalReviews(0);
+      }
+
+    } catch (err) {
+      console.log("Review fetch error:", err);
     }
-
-    const list = data.reviews || [];
-
-    setReviews(list);
-
-    const myReview = list.find((r: any) => r.user_id === currentUserId) || null;
-
-    setUserReview(myReview);
-    setUserReviewId(myReview?.id || null);
-
-    // prefill form for update
-    if (myReview) {
-      setRatingInput(myReview.rating);
-      setCommentInput(myReview.comment || "");
-    }
-
-    // ⭐ FIXED AVG RATING (using list, NOT reviews state)
-    if (list.length > 0) {
-      const total = list.reduce((sum: number, r: any) => sum + r.rating, 0);
-      setAvgRating(total / list.length);
-      setTotalReviews(list.length);
-    } else {
-      setAvgRating(0);
-      setTotalReviews(0);
-    }
-
-  } catch (err) {
-    console.log("Review fetch error:", err);
-  }
-};
+  };
 
   // -----------------------------------------------------
   // ADD REVIEW (POST)
@@ -219,129 +219,231 @@ export default function ProductView({ id }: ProductPageProps) {
     }
   };
 
-  if (!product) return <p className="text-center mt-10">loading...</p>;
+  if (!product) return <div className="text-center mt-20 text-gray-500 text-lg">Loading...</div>;
 
   const isOutOfStock = product.stock <= 0;
   const totalPrice = (product.price * quantity).toFixed(2);
 
   return (
-    <div className="flex flex-col items-center m-5">
+    <div className="min-h-screen bg-white mt-20">
+      {/* PRODUCT SECTION */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
 
-      {/* PRODUCT NAME */}
-      <h1 className="text-4xl font-bold mb-3">{product.name}</h1>
-
-      {/* IMAGE */}
-      <div className="relative w-full max-w-md h-64 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-        {product.image_url ? (
-          <Image src={product.image_url} alt={product.name} fill className="object-contain" />
-        ) : "No image"}
-      </div>
-
-      {/* PRICE */}
-      <p className="text-lg mt-4">Price: ${product.price.toFixed(2)}</p>
-
-      {/* STOCK */}
-      <p className="text-lg">
-        Stock:
-        <span className={isOutOfStock ? "text-red-500" : "text-green-600"}>
-          {isOutOfStock ? " Out of stock" : ` ${product.stock}`}
-        </span>
-      </p>
-
-      {/* QUANTITY */}
-      <div className="mt-3 flex gap-4 items-center">
-        <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="px-3 py-1 bg-gray-400 text-white rounded">
-          -
-        </button>
-        <span className="text-xl">{quantity}</span>
-        <button onClick={() => setQuantity(q => q + 1)} className="px-3 py-1 bg-gray-400 text-white rounded">
-          +
-        </button>
-      </div>
-
-      {/* TOTAL */}
-      <p className="text-xl font-bold mt-3">Total: ${totalPrice}</p>
-
-      {/* ADD TO CART */}
-      <button
-        onClick={handleAddToCart}
-        disabled={isOutOfStock || loading || added}
-        className="mt-5 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-      >
-        {loading ? "Adding..." : added ? "✔ Added" : "Add to Cart"}
-      </button>
-
-      {message && <p className="mt-2 text-center text-red-500">{message}</p>}
-
-      {/* REVIEW FORM */}
-      <div className="w-full max-w-xl mt-10 p-4 border rounded-lg bg-gray-100">
-        <h2 className="text-xl font-semibold mb-2">
-          {userReview ? "Update Your Review" : "Add Review"}
-        </h2>
-
-        {/* RATING */}
-        <div className="flex gap-2 mb-2">
-          {[1, 2, 3, 4, 5].map(star => (
-            <button
-              key={star}
-              onClick={() => setRatingInput(star)}
-              className={`text-2xl ${ratingInput >= star ? "text-yellow-500" : "text-gray-400"}`}
-            >
-              ★
-            </button>
-          ))}
-        </div>
-
-        {/* COMMENT */}
-        <textarea
-          placeholder="Write a comment (optional)"
-          className="w-full p-2 border rounded bg-white"
-          value={commentInput}
-          onChange={(e) => setCommentInput(e.target.value)}
-        />
-
-        {!userReview ? (
-          <button
-            onClick={handleAddReview}
-            className="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
-          >
-            Submit Review
-          </button>
-        ) : (
-          <>
-            <button
-              onClick={handleUpdateReview}
-              className="mt-3 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
-            >
-              Update Review
-            </button>
-            <button
-              onClick={handleDeleteReview}
-              className="mt-3 ml-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
-            >
-              Delete Review
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* SHOW REVIEWS */}
-      <div className="w-full max-w-xl mt-8">
-        <h2 className="text-2xl font-bold mb-4">Reviews</h2>
-        <h2 className="text-2xl font-bold mb-4">Average Rating: {avgRating}</h2>
-        <h2 className="text-2xl font-bold mb-4">Total Reviews: {totalReviews}</h2>
-
-        {reviews.length === 0 && <p>No reviews yet.</p>}
-
-        {reviews
-          .filter((rev) =>  rev.comment !== null)
-          .map((rev) => (
-            <div key={rev.id} className="p-4 mb-3 border rounded bg-white shadow-sm">
-              <p className="text-yellow-500 text-xl">{"★".repeat(rev.rating)}</p>
-              <p className="mt-1 text-gray-700">{rev.comment}</p>
-              <p className="text-sm text-gray-400 mt-1">by {rev.username || "User"}</p>
+          {/* LEFT — IMAGE */}
+          <div className="flex justify-center items-center bg-gray-50 rounded-lg p-8 sticky top-24 h-fit">
+            <div className="relative w-full max-w-md h-96">
+              {product.image_url ? (
+                <Image
+                  src={product.image_url}
+                  alt={product.name}
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              ) : (
+                <div className="text-gray-400 flex justify-center items-center h-full text-lg">
+                  No image available
+                </div>
+              )}
             </div>
-          ))}
+          </div>
+
+          {/* RIGHT — PRODUCT INFO & CTA */}
+          <div className="flex flex-col justify-start space-y-6">
+
+            {/* Product Name */}
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
+                {product.name}
+              </h1>
+
+              {/* Rating */}
+              <div className="flex items-center gap-3 mt-4">
+                {totalReviews > 0 ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-yellow-500 text-2xl">★</span>
+                      <span className="text-xl font-semibold text-gray-900">
+                        {avgRating.toFixed(1)}
+                      </span>
+                    </div>
+                    <span className="text-gray-500">({totalReviews} reviews)</span>
+                  </>
+                ) : (
+                  <span className="text-gray-500">No reviews yet</span>
+                )}
+              </div>
+            </div>
+
+            {/* Price Section */}
+            <div className="border-t border-b border-gray-200 py-6 space-y-3">
+              <div>
+                <p className="text-gray-600 text-sm font-medium mb-1">Price</p>
+                <p className="text-4xl font-bold text-gray-900">
+                  ${product.price.toFixed(2)}
+                </p>
+              </div>
+
+              {/* Stock Status */}
+              <div className="pt-3">
+                <p className={`text-lg font-semibold ${
+                  isOutOfStock ? "text-red-600" : "text-green-600"
+                }`}>
+                  {isOutOfStock ? "❌ Out of Stock" : `✓ ${product.stock} in stock`}
+                </p>
+              </div>
+            </div>
+
+            {/* Quantity & Cart */}
+            <div className="space-y-4">
+              {/* Quantity Selector */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-3">Quantity</p>
+                <div className="flex items-center border border-gray-300 rounded-lg w-fit">
+                  <button
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    disabled={isOutOfStock}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition disabled:opacity-50"
+                  >
+                    −
+                  </button>
+                  <span className="px-6 py-2 font-semibold text-gray-900 border-l border-r border-gray-300">
+                    {quantity}
+                  </span>
+                  <button
+                    onClick={() => setQuantity(q => q + 1)}
+                    disabled={isOutOfStock}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition disabled:opacity-50"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Add to Cart Button */}
+              <button
+                onClick={handleAddToCart}
+                disabled={isOutOfStock || loading || added}
+                className={`w-full py-3 px-6 rounded-lg font-bold text-lg transition ${
+                  isOutOfStock
+                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                    : added
+                    ? "bg-green-500 text-white"
+                    : "bg-orange-500 hover:bg-orange-600 text-white"
+                }`}
+              >
+                {loading ? "Adding..." : added ? "✔ Added to Cart" : "Add to Cart"}
+              </button>
+
+              {message && (
+                <p className={`text-sm font-medium ${message.includes("login") ? "text-red-600" : "text-green-600"}`}>
+                  {message}
+                </p>
+              )}
+            </div>
+
+            
+          </div>
+        </div>
+      </div>
+
+      {/* REVIEWS SECTION */}
+      <div className="bg-gray-50 py-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* Reviews Heading */}
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">Customer Reviews</h2>
+
+          {/* Write/Edit Review Form */}
+          <div className="bg-white rounded-lg shadow-md p-8 mb-8 border border-gray-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">
+              {userReview ? "Update Your Review" : "Write a Review"}
+            </h3>
+
+            {/* Rating Stars */}
+            <div className="mb-6">
+              <p className="text-sm font-medium text-gray-700 mb-3">Your Rating</p>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    onClick={() => setRatingInput(star)}
+                    className={`text-4xl transition transform hover:scale-110 ${
+                      ratingInput >= star ? "text-yellow-400" : "text-gray-300"
+                    }`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Comment Textarea */}
+            <div className="mb-6">
+              <label className="text-sm font-medium text-gray-700 block mb-3">
+                Your Comment
+              </label>
+              <textarea
+                className="w-full p-4 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                rows={4}
+                placeholder="Share your experience with this product..."
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            {!userReview ? (
+              <button
+                onClick={handleAddReview}
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition"
+              >
+                Submit Review
+              </button>
+            ) : (
+              <div className="flex gap-3">
+                <button
+                  onClick={handleUpdateReview}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+                >
+                  Update Review
+                </button>
+                <button
+                  onClick={handleDeleteReview}
+                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
+                >
+                  Delete Review
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Reviews List */}
+          {reviews.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-8 text-center text-gray-500">
+              <p className="text-lg">No reviews yet. Be the first to review!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {reviews
+                .filter(r => r.comment !== null)
+                .map(r => (
+                  <div key={r.id} className="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="text-yellow-400 text-lg font-semibold">
+                          {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">by <span className="font-semibold text-gray-900">{r.username || "Anonymous"}</span></p>
+                      </div>
+                    </div>
+                    <p className="text-gray-800 leading-relaxed">{r.comment}</p>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

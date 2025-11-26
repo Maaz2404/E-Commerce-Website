@@ -285,7 +285,7 @@ export default function OrderPage() {
           <button
             type="button"
             onClick={() => setShowAddModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
           >
             Add method
           </button>

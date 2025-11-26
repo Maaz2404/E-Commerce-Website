@@ -28,6 +28,10 @@ export default function HomePage() {
   const [messageInput, setMessageInput] = useState("");
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const [sending, setSending] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  const categories = ["All", "Bakery", "Beverages", "Snacks", "Dairy"];
+
 
   // load products + coupons once
   useEffect(() => {
@@ -200,11 +204,29 @@ export default function HomePage() {
 
   return (
     <div className="pt-20 m-5 flex">
+      <div className="absolute left-5 top-24 flex gap-3 bg-white p-3 rounded shadow-md z-30">
+  <span className="font-semibold">Category:</span>
+  <select
+    value={selectedCategory}
+    onChange={(e) => setSelectedCategory(e.target.value)}
+    className="border p-1 rounded"
+  >
+    {categories.map((c) => (
+      <option key={c} value={c}>
+        {c}
+      </option>
+    ))}
+  </select>
+</div>
+
       {/* Products Grid */}
-      <div className="flex-1 grid items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-        {products.map((product: ProductInput) => (
+      <div className="flex-1 grid items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mt-20 gap-5">
+        {products
+        .filter((p) => selectedCategory === "All" || p.category === selectedCategory)
+        .map((product: ProductInput) => (
           <ProductCard key={product.id} {...product} />
-        ))}
+      ))}
+
       </div>
 
       {/* Floating Coupons Panel */}
