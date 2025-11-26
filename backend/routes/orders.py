@@ -158,3 +158,86 @@ def get_all_orders(user):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@orders_bp.route("/<int:order_id>/refund", methods=["POST"])
+@token_required
+def refund_order(user, order_id):
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        # 1) Fetch order
+        cur.execute("""
+            SELECT id, user_id, total_amount, status
+            FROM orders
+            WHERE id = %s
+        """, (order_id,))
+        order = cur.fetchone()
+
+        if not order:
+            return jsonify({"error": "Order not found"}), 404
+
+        order_id, owner_id, total_amount, status = order
+
+        # 2) Check permission
+        is_admin = user.get("role") == "admin"
+
+        # User trying to refund someone else's order — block it
+        if not is_admin and owner_id != user["id"]:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        # User restrictions
+        if not is_admin:
+            # normal user can only refund if paid
+            if status not in ["paid", "delivered"]:
+                return jsonify({"error": "Order cannot be refunded in its current status"}), 400
+
+        # Prevent double refund
+        if status == "refunded":
+            return jsonify({"error": "Order already refunded"}), 400
+
+        # 3) Fetch payment method for user
+        cur.execute("""
+            SELECT id, balance
+            FROM payment_methods
+            WHERE user_id = %s
+            ORDER BY id ASC
+            LIMIT 1
+        """, (owner_id,))
+        payment_method = cur.fetchone()
+
+        if not payment_method:
+            return jsonify({"error": "User has no payment method to refund to"}), 400
+
+        pay_method_id, old_balance = payment_method
+
+        new_balance = old_balance + total_amount
+
+        # 4) Update payment method balance
+        cur.execute("""
+            UPDATE payment_methods
+            SET balance = %s
+            WHERE id = %s
+        """, (new_balance, pay_method_id))
+
+        # 5) Update order status
+        cur.execute("""
+            UPDATE orders
+            SET status = %s, updated_at = %s
+            WHERE id = %s
+        """, ("refunded", datetime.utcnow(), order_id))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "message": "Order refunded",
+            "refund_amount": total_amount,
+            "refunded_to_payment_method": pay_method_id,
+            "admin_override": is_admin
+        }), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
