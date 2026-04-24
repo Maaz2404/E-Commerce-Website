@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
@@ -7,7 +8,7 @@ import { JwtPayload } from "@/components/NavBar";
 export interface CartItem {
   item_id: number;
   product_name: string;
-  product_id:number;
+  product_id: number;
   price: number;
   quantity: number;
   total: number;
@@ -27,7 +28,6 @@ export default function CartPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // ✅ Fetch Cart (only runs if token valid)
   const fetchCart = async () => {
     try {
       const res = await fetch(`${baseURL}/carts/`, {
@@ -44,11 +44,10 @@ export default function CartPage() {
       setCart(data);
     } catch (err) {
       console.error("Error fetching cart:", err);
-      setMessage("❌ Failed to load cart.");
+      setMessage("Error: Failed to load cart.");
     }
   };
 
-  // ✅ Auth check + fetch logic
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -60,7 +59,7 @@ export default function CartPage() {
     try {
       const decoded = jwtDecode<JwtPayload>(token);
       if (decoded?.user_id) {
-        fetchCart(); // ✅ just fetch — no redirect
+        fetchCart();
       } else {
         router.push("/login");
       }
@@ -70,7 +69,6 @@ export default function CartPage() {
     }
   }, [router]);
 
-  // ✅ Delete item
   const handleDelete = async (itemId: number) => {
     try {
       setLoading(true);
@@ -86,7 +84,6 @@ export default function CartPage() {
 
       if (!res.ok) throw new Error("Failed to delete item");
 
-      // Optimistically update UI
       setCart((prev) =>
         prev
           ? {
@@ -99,10 +96,10 @@ export default function CartPage() {
           : prev
       );
 
-      setMessage("✅ Item removed successfully!");
+      setMessage("Success: Item removed successfully.");
     } catch (err) {
       console.error("Error removing item:", err);
-      setMessage("❌ Failed to remove item. Please try again.");
+      setMessage("Error: Failed to remove item. Please try again.");
     } finally {
       setLoading(false);
       setTimeout(() => setMessage(""), 2500);
@@ -111,74 +108,78 @@ export default function CartPage() {
 
   if (!cart) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <p className="text-gray-600 text-lg">Loading your cart...</p>
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-lg text-slate-300">Loading your cart...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto mt-20 p-6 bg-white shadow-md rounded-lg">
-      <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
-        Your Cart
-      </h1>
+    <div className="mx-auto mt-28 max-w-4xl px-5 pb-10">
+      <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(8,17,33,0.96),rgba(4,9,18,0.98))] p-6 shadow-[0_24px_80px_rgba(2,6,23,0.45)] sm:p-8">
+        <h1 className="mb-6 text-center text-3xl font-bold text-white">
+          Your Cart
+        </h1>
 
-      {cart.items.length === 0 ? (
-        <p className="text-center text-gray-500 text-lg">Your cart is empty 🛒</p>
-      ) : (
-        <div className="space-y-4">
-          {cart.items.map((item) => (
-            <div
-              key={item.item_id}
-              className="flex justify-between items-center border-b border-gray-200 pb-4"
-            >
-              <div>
-                <h2 className="text-lg font-semibold text-gray-800">
-                  {item.product_name}
-                </h2>
-                <p className="text-gray-600">
-                  Price: <span className="font-medium">${item.price}</span>
-                </p>
-                <p className="text-gray-600">
-                  Quantity: <span className="font-medium">{item.quantity}</span>
-                </p>
-                <p className="text-gray-800 font-semibold">
-                  Total: ${item.total.toFixed(2)}
-                </p>
-              </div>
-
-              <button
-                onClick={() => handleDelete(item.product_id)}
-                disabled={loading}
-                className={`px-4 py-2 rounded-md text-white font-medium transition-colors ${
-                  loading
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-red-500 hover:bg-red-600"
-                }`}
+        {cart.items.length === 0 ? (
+          <p className="text-center text-lg text-slate-300">
+            Your cart is empty.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {cart.items.map((item) => (
+              <div
+                key={item.item_id}
+                className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/4 px-5 py-4"
               >
-                {loading ? "Deleting..." : "Delete"}
-              </button>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
+                    {item.product_name}
+                  </h2>
+                  <p className="text-slate-300">
+                    Price: <span className="font-medium">${item.price}</span>
+                  </p>
+                  <p className="text-slate-300">
+                    Quantity: <span className="font-medium">{item.quantity}</span>
+                  </p>
+                  <p className="font-semibold text-slate-100">
+                    Total: ${item.total.toFixed(2)}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => handleDelete(item.product_id)}
+                  disabled={loading}
+                  className={`rounded-md px-4 py-2 font-medium text-white transition-colors ${
+                    loading
+                      ? "cursor-not-allowed bg-slate-600"
+                      : "bg-red-500 hover:bg-red-600"
+                  }`}
+                >
+                  {loading ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            ))}
+
+            <div className="flex items-center justify-between border-t border-white/10 pt-4">
+              <h2 className="text-xl font-bold text-white">Total:</h2>
+              <p className="text-2xl font-bold text-blue-300">
+                ${cart.total_price.toFixed(2)}
+              </p>
             </div>
-          ))}
-
-          <div className="border-t border-gray-300 pt-4 flex justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-800">Total:</h2>
-            <p className="text-2xl font-bold text-green-600">
-              ${cart.total_price.toFixed(2)}
-            </p>
           </div>
-        </div>
-      )}
+        )}
 
-      {message && (
-        <p
-          className={`mt-4 text-center font-medium ${
-            message.startsWith("✅") ? "text-green-600" : "text-red-500"
-          }`}
-        >
-          {message}
-        </p>
-      )}
+        {message && (
+          <p
+            className={`mt-4 text-center font-medium ${
+              message.startsWith("Success") ? "text-cyan-200" : "text-rose-300"
+            }`}
+          >
+            {message}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

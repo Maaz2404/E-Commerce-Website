@@ -1,4 +1,5 @@
 "use client";
+
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,16 +7,15 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormControl,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 
-// ✅ validation schema
 const formSchema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -46,13 +46,12 @@ export default function Login() {
 
       if (!res.ok) throw new Error(data?.message || "Login failed");
 
-      console.log("✅ Logged in:", data);
+      console.log("Logged in:", data);
       localStorage.setItem("token", data.token);
       window.dispatchEvent(new Event("authChange"));
       router.push("/");
-
     } catch (err: any) {
-      console.error("❌ Error:", err.message);
+      console.error("Error:", err.message);
       alert(err.message);
     } finally {
       setLoading(false);
@@ -60,11 +59,14 @@ export default function Login() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-sm">
-        <h2 className="text-2xl font-semibold text-center mb-6 text-gray-800">
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_32%),linear-gradient(180deg,#071120_0%,#050b16_55%,#02040a_100%)] px-5 py-24">
+      <div className="w-full max-w-sm rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,19,38,0.94),rgba(4,8,16,0.98))] p-8 shadow-[0_25px_80px_rgba(2,6,23,0.45)]">
+        <h2 className="mb-2 text-center text-3xl font-semibold text-white">
           Log In
         </h2>
+        <p className="mb-6 text-center text-sm text-slate-300">
+          Welcome back to the refreshed storefront.
+        </p>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -103,7 +105,7 @@ export default function Login() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600"
+              className="w-full rounded-full bg-primary text-primary-foreground shadow-[0_14px_32px_rgba(37,99,235,0.35)] hover:bg-accent"
             >
               {loading ? "Logging in..." : "Log In"}
             </Button>

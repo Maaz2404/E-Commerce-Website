@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pencil, Trash2, Check, X, PlusCircle } from "lucide-react";
+import { Check, Pencil, PlusCircle, Trash2, X } from "lucide-react";
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -109,7 +109,9 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleNewChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleNewChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setNewProduct((prev) => ({ ...prev, [name]: value }));
   };
@@ -159,17 +161,16 @@ export default function AdminProductsPage() {
   };
 
   return (
-    <div className="p-10 flex flex-row gap-8 text-center flex-1 w-full max-w-full">
-      {/* LEFT SIDE - Product List */}
+    <div className="flex w-full max-w-full flex-1 flex-row gap-8 p-10 text-center">
       <div className="flex-1 text-left">
-        <h1 className="text-3xl font-bold w-full mb-6 text-center">
+        <h1 className="mb-6 w-full text-center text-3xl font-bold text-white">
           Admin Products
         </h1>
 
         {products === null ? (
-          <p>Loading products...</p>
+          <p className="text-slate-300">Loading products...</p>
         ) : products.length === 0 ? (
-          <p>No products found.</p>
+          <p className="text-slate-300">No products found.</p>
         ) : (
           products.map((product: any) => {
             const isEditing = editingProductId === product.id;
@@ -178,7 +179,7 @@ export default function AdminProductsPage() {
             return (
               <div
                 key={product.id}
-                className="border p-4 my-2 w-full rounded-lg shadow-sm flex justify-between items-start"
+                className="my-2 flex w-full items-start justify-between rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(10,19,38,0.92),rgba(4,8,16,0.96))] p-4 shadow-[0_12px_35px_rgba(2,6,23,0.25)]"
               >
                 <div className="flex-1">
                   {isEditing ? (
@@ -187,49 +188,51 @@ export default function AdminProductsPage() {
                         name="name"
                         value={currentData.name}
                         onChange={(e) => handleChange(e, product.id)}
-                        className="border p-1 mb-2 w-full rounded"
+                        className="mb-2 w-full rounded-xl border border-white/10 bg-slate-950/70 p-2 text-slate-100"
                       />
                       <textarea
                         name="description"
                         value={currentData.description}
                         onChange={(e) => handleChange(e, product.id)}
-                        className="border p-1 mb-2 w-full rounded"
+                        className="mb-2 w-full rounded-xl border border-white/10 bg-slate-950/70 p-2 text-slate-100"
                       />
                       <input
                         name="price"
                         value={currentData.price}
                         onChange={(e) => handleChange(e, product.id)}
-                        className="border p-1 mb-2 w-full rounded"
+                        className="mb-2 w-full rounded-xl border border-white/10 bg-slate-950/70 p-2 text-slate-100"
                       />
                       <input
                         name="stock"
                         value={currentData.stock}
                         onChange={(e) => handleChange(e, product.id)}
-                        className="border p-1 mb-2 w-full rounded"
+                        className="mb-2 w-full rounded-xl border border-white/10 bg-slate-950/70 p-2 text-slate-100"
                       />
                       <input
                         name="category"
                         value={currentData.category}
                         onChange={(e) => handleChange(e, product.id)}
-                        className="border p-1 mb-2 w-full rounded"
+                        className="mb-2 w-full rounded-xl border border-white/10 bg-slate-950/70 p-2 text-slate-100"
                       />
                       <input
                         name="image_url"
                         value={currentData.image_url}
                         onChange={(e) => handleChange(e, product.id)}
-                        className="border p-1 mb-2 w-full rounded"
+                        className="mb-2 w-full rounded-xl border border-white/10 bg-slate-950/70 p-2 text-slate-100"
                       />
                     </>
                   ) : (
                     <>
-                      <h2 className="text-xl font-semibold">{product.name}</h2>
+                      <h2 className="text-xl font-semibold text-white">
+                        {product.name}
+                      </h2>
                       {product.description && (
-                        <p className="text-gray-600">{product.description}</p>
+                        <p className="text-slate-300">{product.description}</p>
                       )}
-                      <p className="text-gray-800 font-bold">
+                      <p className="font-bold text-slate-100">
                         ${product.price} | Stock: {product.stock}
                       </p>
-                      <p className="text-gray-500 text-sm">
+                      <p className="text-sm text-blue-100/75">
                         {product.category || "Uncategorized"}
                       </p>
                     </>
@@ -241,13 +244,13 @@ export default function AdminProductsPage() {
                     <>
                       <button
                         onClick={() => handleSaveEdit(product.id)}
-                        className="text-green-600 hover:text-green-800"
+                        className="text-cyan-200 transition hover:text-cyan-100"
                       >
                         <Check size={20} />
                       </button>
                       <button
                         onClick={handleCancelEdit}
-                        className="text-red-500 hover:text-red-700"
+                        className="text-rose-300 transition hover:text-rose-200"
                       >
                         <X size={20} />
                       </button>
@@ -256,13 +259,13 @@ export default function AdminProductsPage() {
                     <>
                       <button
                         onClick={() => handleEditClick(product)}
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-blue-300 transition hover:text-blue-200"
                       >
                         <Pencil size={20} />
                       </button>
                       <button
                         onClick={() => handleDelete(product.id)}
-                        className="text-red-500 hover:text-red-700"
+                        className="text-rose-300 transition hover:text-rose-200"
                       >
                         <Trash2 size={20} />
                       </button>
@@ -275,9 +278,8 @@ export default function AdminProductsPage() {
         )}
       </div>
 
-      {/* RIGHT SIDE - Add Product Form */}
-      <div className="w-1/3 border rounded-lg shadow-md p-6 bg-white self-start">
-        <h2 className="text-xl font-bold mb-4 text-gray-800 text-center">
+      <div className="w-1/3 self-start rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,19,38,0.94),rgba(4,8,16,0.98))] p-6 shadow-[0_18px_50px_rgba(2,6,23,0.3)]">
+        <h2 className="mb-4 text-center text-xl font-bold text-white">
           Add New Product
         </h2>
 
@@ -286,14 +288,14 @@ export default function AdminProductsPage() {
           value={newProduct.name}
           onChange={handleNewChange}
           placeholder="Name"
-          className="border p-2 mb-2 w-full rounded"
+          className="mb-2 w-full rounded-xl border border-white/10 bg-slate-950/70 p-2 text-slate-100"
         />
         <textarea
           name="description"
           value={newProduct.description}
           onChange={handleNewChange}
           placeholder="Description"
-          className="border p-2 mb-2 w-full rounded"
+          className="mb-2 w-full rounded-xl border border-white/10 bg-slate-950/70 p-2 text-slate-100"
         />
         <input
           name="price"
@@ -301,7 +303,7 @@ export default function AdminProductsPage() {
           value={newProduct.price}
           onChange={handleNewChange}
           placeholder="Price"
-          className="border p-2 mb-2 w-full rounded"
+          className="mb-2 w-full rounded-xl border border-white/10 bg-slate-950/70 p-2 text-slate-100"
         />
         <input
           name="stock"
@@ -309,27 +311,27 @@ export default function AdminProductsPage() {
           value={newProduct.stock}
           onChange={handleNewChange}
           placeholder="Stock"
-          className="border p-2 mb-2 w-full rounded"
+          className="mb-2 w-full rounded-xl border border-white/10 bg-slate-950/70 p-2 text-slate-100"
         />
         <input
           name="category"
           value={newProduct.category}
           onChange={handleNewChange}
           placeholder="Category"
-          className="border p-2 mb-2 w-full rounded"
+          className="mb-2 w-full rounded-xl border border-white/10 bg-slate-950/70 p-2 text-slate-100"
         />
         <input
           name="image_url"
           value={newProduct.image_url}
           onChange={handleNewChange}
           placeholder="Image URL"
-          className="border p-2 mb-4 w-full rounded"
+          className="mb-4 w-full rounded-xl border border-white/10 bg-slate-950/70 p-2 text-slate-100"
         />
 
         <button
           onClick={handleAddProduct}
           disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded w-full flex items-center justify-center gap-2"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 font-semibold text-primary-foreground shadow-[0_14px_32px_rgba(37,99,235,0.35)] transition hover:bg-accent"
         >
           <PlusCircle size={18} />
           {loading ? "Adding..." : "Add Product"}

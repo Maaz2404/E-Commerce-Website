@@ -30,7 +30,7 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <NavBar/>
-        <main>{children}</main>
+        <main className="relative min-h-screen">{children}</main>
       </body>
     </html>
   );

@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { useEffect, useState } from "react";
 import { ProductInput } from "@/components/ProductCard";
 import Image from "next/image";
 
@@ -30,150 +31,155 @@ export default function ProductView({ id }: ProductPageProps) {
     fetchProduct();
   }, [id]);
 
-  if (!product) return <p className="text-center py-10">Loading...</p>;
+  if (!product) return <p className="py-10 text-center">Loading...</p>;
 
   const isOutOfStock = product.stock <= 0;
   const totalPrice = (product.price * quantity).toFixed(2);
 
   const handleAddToCart = async () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    setMessage("⚠️ You must be logged in to add items to your cart.");
-    return;
-  }
-
-  try {
-    setLoading(true);
-    setMessage("");
-
-    const res = await fetch(`${baseURL}/carts/add`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        product_id: id,
-        quantity,
-      }),
-    });
-
-    const result = await res.json();
-
-    if (!res.ok && result.error) {
-      setMessage(result.error || "❌ Failed to add to cart.");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setMessage("Error: You must be logged in to add items to your cart.");
       return;
     }
 
-    if (result.message === "Product already in cart") {
-      setMessage("🛒 This product is already in your cart!");
-      setAdded(true);
-      setTimeout(() => setAdded(false), 2000);
-      return;
+    try {
+      setLoading(true);
+      setMessage("");
+
+      const res = await fetch(`${baseURL}/carts/add`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          product_id: id,
+          quantity,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok && result.error) {
+        setMessage(result.error || "Error: Failed to add to cart.");
+        return;
+      }
+
+      if (result.message === "Product already in cart") {
+        setMessage("Info: This product is already in your cart.");
+        setAdded(true);
+        setTimeout(() => setAdded(false), 2000);
+        return;
+      }
+
+      if (result.message === "Product added to cart") {
+        setMessage("Success: Added to cart successfully.");
+        setAdded(true);
+        setTimeout(() => setAdded(false), 2000);
+        return;
+      }
+
+      setMessage("Info: Unexpected response. Please try again.");
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      setMessage("Error: Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    if (result.message === "Product added to cart") {
-      setMessage("✅ Added to cart successfully!");
-      setAdded(true);
-      setTimeout(() => setAdded(false), 2000);
-      return;
-    }
-
-    setMessage("ℹ️ Unexpected response. Please try again.");
-
-  } catch (err) {
-    console.error("Error adding to cart:", err);
-    setMessage("⚠️ Something went wrong. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
-    <div className="flex flex-col items-center m-5">
-      <h1 className="font-bold text-4xl mb-4">{product.name}</h1>
+    <div className="mx-auto mt-28 mb-10 max-w-4xl px-5">
+      <div className="flex flex-col items-center rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(8,17,33,0.96),rgba(4,9,18,0.98))] p-6 shadow-[0_24px_80px_rgba(2,6,23,0.45)] sm:p-8">
+        <h1 className="mb-4 text-center text-4xl font-bold text-white">
+          {product.name}
+        </h1>
 
-      <div className="relative w-full max-w-md h-64 mb-4 rounded-lg overflow-hidden flex items-center justify-center bg-gray-100">
-        {product.image_url ? (
-          <Image
-            src={product.image_url}
-            alt={product.name}
-            fill
-            className="object-contain"
-            sizes="100%"
-          />
-        ) : (
-          <div className="text-gray-500">No Image Available</div>
+        <div className="relative mb-4 flex h-64 w-full max-w-md items-center justify-center overflow-hidden rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(30,41,59,0.9),rgba(7,12,20,0.95))]">
+          {product.image_url ? (
+            <Image
+              src={product.image_url}
+              alt={product.name}
+              fill
+              className="object-contain"
+              sizes="100%"
+            />
+          ) : (
+            <div className="text-muted-foreground">No Image Available</div>
+          )}
+        </div>
+
+        <p className="mb-3 max-w-2xl text-center text-lg text-slate-300">
+          {product.description || "No description available."}
+        </p>
+
+        <p className="mb-2 text-xl font-semibold text-slate-100">
+          Unit Price: ${product.price.toFixed(2)}
+        </p>
+        <p className="mb-2 text-lg text-slate-100">
+          Stock:{" "}
+          <span
+            className={`font-semibold ${
+              isOutOfStock ? "text-rose-300" : "text-cyan-200"
+            }`}
+          >
+            {isOutOfStock ? "Out of Stock" : product.stock}
+          </span>
+        </p>
+
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            className="rounded-full border border-white/10 bg-secondary px-4 py-2 text-lg text-secondary-foreground transition-colors hover:bg-accent disabled:opacity-50"
+            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+            disabled={quantity <= 1 || loading}
+          >
+            -
+          </button>
+          <span className="text-xl font-semibold text-white">{quantity}</span>
+          <button
+            className="rounded-full border border-white/10 bg-secondary px-4 py-2 text-lg text-secondary-foreground transition-colors hover:bg-accent disabled:opacity-50"
+            onClick={() => setQuantity((q) => q + 1)}
+            disabled={isOutOfStock || loading}
+          >
+            +
+          </button>
+        </div>
+
+        <p className="mt-4 text-2xl font-bold text-blue-300">
+          Total: ${totalPrice}
+        </p>
+
+        <button
+          onClick={handleAddToCart}
+          disabled={isOutOfStock || loading || added}
+          className={`mt-5 rounded-full px-6 py-3 font-medium transition-all text-primary-foreground ${
+            isOutOfStock
+              ? "cursor-not-allowed bg-destructive/80 text-destructive-foreground"
+              : added
+                ? "bg-primary/90"
+                : "bg-primary shadow-[0_12px_30px_rgba(37,99,235,0.35)] hover:bg-accent"
+          }`}
+        >
+          {loading
+            ? "Adding..."
+            : added
+              ? "Added"
+              : isOutOfStock
+                ? "Out of Stock"
+                : "Add to Cart"}
+        </button>
+
+        {message && (
+          <p
+            className={`mt-3 text-center ${
+              message.startsWith("Error") ? "text-rose-300" : "text-cyan-200"
+            }`}
+          >
+            {message}
+          </p>
         )}
       </div>
-
-      <p className="text-gray-700 text-lg text-center max-w-2xl mb-3">
-        {product.description || "No description available."}
-      </p>
-
-      <p className="text-xl font-semibold mb-2">
-        Unit Price: ${product.price.toFixed(2)}
-      </p>
-      <p className="text-lg mb-2">
-        Stock:{" "}
-        <span
-          className={`font-semibold ${
-            isOutOfStock ? "text-red-500" : "text-green-600"
-          }`}
-        >
-          {isOutOfStock ? "Out of Stock" : product.stock}
-        </span>
-      </p>
-
-      <div className="flex items-center gap-3 mt-3">
-        <button
-          className="px-3 py-1 bg-gray-400 rounded text-white text-lg disabled:opacity-50"
-          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-          disabled={quantity <= 1 || loading}
-        >
-          -
-        </button>
-        <span className="text-xl font-semibold">{quantity}</span>
-        <button
-          className="px-3 py-1 bg-gray-400 rounded text-white text-lg disabled:opacity-50"
-          onClick={() => setQuantity((q) => q + 1)}
-          disabled={isOutOfStock || loading}
-        >
-          +
-        </button>
-      </div>
-
-      <p className="text-2xl font-bold mt-4">Total: ${totalPrice}</p>
-
-      <button
-        onClick={handleAddToCart}
-        disabled={isOutOfStock || loading || added}
-        className={`mt-5 px-6 py-2 rounded-lg text-white font-medium transition-all ${
-          isOutOfStock
-            ? "bg-gray-400 cursor-not-allowed"
-            : added
-            ? "bg-green-600"
-            : "bg-blue-600 hover:bg-blue-700"
-        }`}
-      >
-        {loading
-          ? "Adding..."
-          : added
-          ? "✔ Added"
-          : isOutOfStock
-          ? "Out of Stock"
-          : "Add to Cart"}
-      </button>
-
-      {message && (
-        <p
-          className={`mt-3 text-center ${
-            message.startsWith("✅") ? "text-green-600" : "text-red-500"
-          }`}
-        >
-          {message}
-        </p>
-      )}
     </div>
   );
 }
