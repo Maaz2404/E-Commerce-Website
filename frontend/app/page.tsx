@@ -1,8 +1,10 @@
 "use client";
 
 import ProductCard, { ProductInput } from "@/components/ProductCard";
-import { useEffect, useRef, useState } from "react";
 import { useCouponStore, Coupon } from "@/store/couponStore";
+import { formatCurrency } from "@/lib/format";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -17,23 +19,21 @@ type SupportMessage = {
 export default function HomePage() {
   const [products, setProducts] = useState<ProductInput[]>([]);
   const { activeCoupons, setActiveCoupons } = useCouponStore();
+  const searchParams = useSearchParams();
 
   const [showCoupons, setShowCoupons] = useState(true);
-
-  // ---- Support chat widget state ----
   const [chatOpen, setChatOpen] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<SupportMessage[]>([]);
   const [chatError, setChatError] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
-  const messagesRef = useRef<HTMLDivElement | null>(null);
   const [sending, setSending] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const messagesRef = useRef<HTMLDivElement | null>(null);
 
   const categories = ["All", "Bakery", "Beverages", "Snacks", "Dairy"];
+  const searchQuery = (searchParams.get("search") ?? "").trim().toLowerCase();
 
-
-  // load products + coupons once
   useEffect(() => {
     fetch(`${baseURL}/products`)
       .then((res) => res.json())
@@ -44,51 +44,52 @@ export default function HomePage() {
       .then((res) => res.json())
       .then((data) => setActiveCoupons(data?.active_coupons ?? []))
       .catch((err) => console.error("Coupons fetch error:", err));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setActiveCoupons]);
 
-  // helper: get token from localStorage
+  const filteredProducts = products.filter((product) => {
+    const matchesCategory =
+      selectedCategory === "All" || product.category === selectedCategory;
+
+    const searchableContent = [
+      product.name,
+      product.description,
+      product.category,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    const matchesSearch = !searchQuery || searchableContent.includes(searchQuery);
+
+    return matchesCategory && matchesSearch;
+  });
+
   const getToken = () => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("token");
   };
 
-  // fetch chat messages when widget opens
-  const openChat = async () => {
-    setChatError(null);
-    const token = getToken();
-    if (!token) {
-      // show panel but prompt login in UI
-      setChatOpen(true);
-      setChatMessages([]);
-      return;
-    }
-
-    setChatOpen(true);
-    await loadMessages(token);
+  const scrollToBottom = () => {
+    if (!messagesRef.current) return;
+    messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
   };
 
-  const closeChat = () => {
-    setChatOpen(false);
-    setChatError(null);
-  };
-
-  // load messages from backend (GET /support/messages)
   const loadMessages = async (token?: string | null) => {
-    const t = token ?? getToken();
-    if (!t) {
+    const authToken = token ?? getToken();
+    if (!authToken) {
       setChatMessages([]);
       return;
     }
 
     setChatLoading(true);
     setChatError(null);
+
     try {
       const res = await fetch(`${baseURL}/support/messages`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${t}`,
+          Authorization: `Bearer ${authToken}`,
         },
       });
 
@@ -98,38 +99,53 @@ export default function HomePage() {
       }
 
       const json = await res.json();
-      // assume backend returns { messages: [...] } in chronological ASC order
-      const msgs: SupportMessage[] = (json?.messages ?? []).map((m: any) => ({
-        id: m.id,
-        sender_type: m.sender_type,
-        message: m.message,
-        is_read: !!m.is_read,
-        created_at: m.created_at,
+      const messages: SupportMessage[] = (json?.messages ?? []).map((message: any) => ({
+        id: message.id,
+        sender_type: message.sender_type,
+        message: message.message,
+        is_read: !!message.is_read,
+        created_at: message.created_at,
       }));
 
-      setChatMessages(msgs);
-      // scroll down after DOM update
+      setChatMessages(messages);
       setTimeout(() => scrollToBottom(), 50);
-    } catch (err: any) {
-      console.error("loadMessages error:", err);
-      setChatError(err?.message ?? "Failed to load messages");
+    } catch (error: any) {
+      console.error("loadMessages error:", error);
+      setChatError(error?.message ?? "Failed to load messages");
     } finally {
       setChatLoading(false);
     }
   };
 
-  // send message (POST /support/send)
+  const openChat = async () => {
+    setChatError(null);
+    const token = getToken();
+
+    setChatOpen(true);
+    if (!token) {
+      setChatMessages([]);
+      return;
+    }
+
+    await loadMessages(token);
+  };
+
+  const closeChat = () => {
+    setChatOpen(false);
+    setChatError(null);
+  };
+
   const sendMessage = async () => {
     if (messageInput.trim() === "") return;
+
     const token = getToken();
     if (!token) {
       setChatError("You must be logged in to send messages.");
       return;
     }
 
-    // optimistic UI: append message locally with a temporary id (negative)
     const tempId = Date.now() * -1;
-    const newMsg: SupportMessage = {
+    const optimisticMessage: SupportMessage = {
       id: tempId,
       sender_type: "user",
       message: messageInput,
@@ -137,7 +153,7 @@ export default function HomePage() {
       created_at: new Date().toISOString(),
     };
 
-    setChatMessages((prev) => [...prev, newMsg]);
+    setChatMessages((prev) => [...prev, optimisticMessage]);
     setMessageInput("");
     setSending(true);
     setChatError(null);
@@ -150,7 +166,7 @@ export default function HomePage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ message: newMsg.message }),
+        body: JSON.stringify({ message: optimisticMessage.message }),
       });
 
       const json = await res.json();
@@ -158,12 +174,11 @@ export default function HomePage() {
         throw new Error(json?.error ?? `Send failed (${res.status})`);
       }
 
-      // replace temporary message with server message (server returns inserted row in "data")
       const returned = json?.data;
       if (returned) {
         setChatMessages((prev) =>
-          prev.map((m) =>
-            m.id === tempId
+          prev.map((message) =>
+            message.id === tempId
               ? {
                   id: returned.id,
                   sender_type: returned.sender_type,
@@ -171,199 +186,231 @@ export default function HomePage() {
                   is_read: !!returned.is_read,
                   created_at: returned.created_at,
                 }
-              : m
+              : message
           )
         );
-      } else {
-        // If server didn't return inserted row, just keep optimistic message but mark as sent (no-op)
       }
-    } catch (err: any) {
-      console.error("sendMessage error:", err);
-      // rollback optimistic message: mark as failed visually or remove
-      setChatMessages((prev) => prev.filter((m) => m.id !== tempId));
-      setChatError(err?.message ?? "Failed to send message");
+    } catch (error: any) {
+      console.error("sendMessage error:", error);
+      setChatMessages((prev) => prev.filter((message) => message.id !== tempId));
+      setChatError(error?.message ?? "Failed to send message");
     } finally {
       setSending(false);
       setTimeout(() => scrollToBottom(), 50);
     }
   };
 
-  // scroll messages to bottom
-  const scrollToBottom = () => {
-    if (!messagesRef.current) return;
-    messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
-  };
-
-  // keyboard send (Enter)
-  const onInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
+  const onInputKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
       sendMessage();
     }
   };
 
   return (
-    <div className="pt-20 m-5 flex">
-      <div className="absolute left-5 top-24 flex gap-3 bg-white p-3 rounded-lg shadow-lg z-30 border border-blue-200">
-  <span className="font-semibold text-slate-900">Category:</span>
-  <select
-    value={selectedCategory}
-    onChange={(e) => setSelectedCategory(e.target.value)}
-    className="border border-blue-300 p-1 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-  >
-    {categories.map((c) => (
-      <option key={c} value={c}>
-        {c}
-      </option>
-    ))}
-  </select>
-</div>
-
-      <div className="flex-1 mt-20">
-        <section className="mb-8 rounded-3xl bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 px-6 py-8 text-white shadow-2xl">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="mb-2 inline-flex rounded-full bg-white/20 px-3 py-1 text-sm font-semibold uppercase tracking-[0.2em]">
-                April 2026 Refresh
-              </p>
-              <h1 className="text-3xl font-black uppercase tracking-tight md:text-5xl">
-                Fresh look, same store, now live on Vercel
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm text-white/90 md:text-base">
-                This banner was added to the v1 branch so we can confirm production updates are reaching the website.
-              </p>
-            </div>
-            <div className="rounded-2xl bg-slate-950/20 px-4 py-3 text-sm font-semibold backdrop-blur">
-              Visible check: if you can see this orange banner, the newest v1 deployment is live.
-            </div>
-          </div>
-        </section>
-
-        {/* Products Grid */}
-        <div className="grid items-center grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {products
-          .filter((p) => selectedCategory === "All" || p.category === selectedCategory)
-          .map((product: ProductInput) => (
-            <ProductCard key={product.id} {...product} />
-        ))}
-        </div>
-      </div>
-
-      {/* Floating Coupons Panel */}
-      {showCoupons && activeCoupons.length > 0 && (
-        <div className="fixed right-5 top-20 w-64 bg-white shadow-xl rounded-lg p-4 z-40 border border-blue-200">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="font-bold text-lg text-slate-900">Active Coupons</h2>
-            <button
-              className="text-slate-500 hover:text-slate-800 transition"
-              onClick={() => setShowCoupons(false)}
-            >
-              ✕
-            </button>
-          </div>
-          <div className="space-y-2">
-            {activeCoupons.map((c: Coupon) => (
-              <div
-                key={c.id}
-                className="bg-blue-50 p-2 rounded-lg hover:bg-blue-100 cursor-pointer border border-blue-200 transition"
-                onClick={() => navigator.clipboard.writeText(c.code)}
-              >
-                <p className="font-semibold text-blue-700">{c.code}</p>
-                <p className="text-sm text-slate-600">
-                  {c.discount_type === "percent"
-                    ? `${c.discount_value}% off`
-                    : `$${c.discount_value} off`}
+    <div className="px-4 pb-10 pt-6 md:px-6">
+      <div className="mx-auto flex max-w-7xl gap-6">
+        <div className="flex-1">
+          <section className="mb-6 rounded-[2rem] border border-sky-100 bg-gradient-to-br from-white via-sky-50 to-amber-50 px-6 py-8 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-sky-950">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-3xl">
+                <p className="mb-3 inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-amber-900 dark:bg-amber-400/10 dark:text-amber-200">
+                  Easy Shopping
+                </p>
+                <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white md:text-5xl">
+                  Find essentials faster, with less guesswork.
+                </h1>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 md:text-base">
+                  Browse by category, search by name, and get help quickly if you need it.
+                  For direct support, call{" "}
+                  <span className="font-semibold text-slate-950 dark:text-white">03122417654</span>.
                 </p>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* ===== Support Chat Widget ===== */}
-      <div className="fixed right-5 bottom-5 z-50">
-        {/* collapsed button */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-sky-100 bg-white/80 px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    Search status
+                  </p>
+                  <p className="mt-2 text-lg font-bold text-slate-950 dark:text-white">
+                    {searchQuery ? `Results for "${searchQuery}"` : "Showing all products"}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-sky-100 bg-white/80 px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    Need help?
+                  </p>
+                  <p className="mt-2 text-lg font-bold text-slate-950 dark:text-white">
+                    Call 03122417654
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-6 flex flex-col gap-3 rounded-3xl border border-sky-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-slate-950 dark:text-white">Filter products</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Choose a category to reduce clutter and find items faster.
+              </p>
+            </div>
+
+            <label className="flex items-center gap-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <span>Category</span>
+              <select
+                value={selectedCategory}
+                onChange={(event) => setSelectedCategory(event.target.value)}
+                className="rounded-full border border-sky-200 bg-slate-50 px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+              >
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </section>
+
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+              {filteredProducts.length} product{filteredProducts.length === 1 ? "" : "s"} found
+            </p>
+          </div>
+
+          {filteredProducts.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-sky-200 bg-white px-6 py-12 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900">
+              <h3 className="text-xl font-bold text-slate-950 dark:text-white">No products match this filter yet.</h3>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Try a different search or switch back to <span className="font-semibold">All</span> categories.
+              </p>
+            </div>
+          ) : (
+            <div className="grid items-stretch grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} {...product} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {showCoupons && activeCoupons.length > 0 && (
+          <div className="fixed right-5 top-24 z-40 hidden w-72 rounded-3xl border border-sky-100 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900 xl:block">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Active Coupons</h2>
+              <button
+                className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white"
+                onClick={() => setShowCoupons(false)}
+                aria-label="Hide active coupons"
+              >
+                ×
+              </button>
+            </div>
+            <p className="mb-3 text-sm text-slate-600 dark:text-slate-300">
+              Tap any coupon to copy it before checkout.
+            </p>
+            <div className="space-y-2">
+              {activeCoupons.map((coupon: Coupon) => (
+                <div
+                  key={coupon.id}
+                  className="cursor-pointer rounded-2xl border border-sky-100 bg-sky-50 p-3 transition hover:border-amber-200 hover:bg-amber-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-800"
+                  onClick={() => navigator.clipboard.writeText(coupon.code)}
+                >
+                  <p className="font-semibold text-sky-700 dark:text-sky-300">{coupon.code}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    {coupon.discount_type === "percent"
+                      ? `${coupon.discount_value}% off`
+                      : `${formatCurrency(coupon.discount_value)} off`}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="fixed bottom-5 right-5 z-50">
         {!chatOpen && (
           <button
-            onClick={() => openChat()}
-            className="flex items-center gap-2 bg-gradient-to-r from-slate-900 to-blue-900 hover:shadow-lg text-white px-4 py-3 rounded-full shadow-lg focus:outline-none transition"
+            onClick={openChat}
+            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-slate-950 to-sky-800 px-4 py-3 text-white shadow-lg transition hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-amber-300"
             title="Support"
           >
             <span className="text-xl">💬</span>
-            <span className="font-medium">Support</span>
+            <span className="font-medium">Need help?</span>
           </button>
         )}
 
-        {/* expanded chat panel */}
         {chatOpen && (
-          <div className="w-80 md:w-96 h-96 bg-white shadow-2xl rounded-lg overflow-hidden flex flex-col">
-            {/* header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-900 to-blue-900 text-white">
+          <div className="flex h-96 w-80 flex-col overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 md:w-96">
+            <div className="flex items-center justify-between bg-gradient-to-r from-slate-950 to-sky-800 px-4 py-3 text-white">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-semibold">?</div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 font-semibold">
+                  ?
+                </div>
                 <div>
                   <div className="font-semibold">Support</div>
-                  <div className="text-xs opacity-90">We're here to help</div>
+                  <div className="text-xs opacity-90">Call 03122417654 or chat here</div>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
-                    // reload messages if logged in
                     const token = getToken();
                     if (token) loadMessages(token);
                   }}
-                  className="text-sm px-2 py-1 bg-white/20 rounded"
+                  className="rounded px-2 py-1 text-sm bg-white/20"
                   title="Refresh"
                 >
                   Refresh
                 </button>
-                <button onClick={closeChat} className="text-xl font-bold px-2">
-                  ✕
+                <button onClick={closeChat} className="px-2 text-xl font-bold" aria-label="Close support chat">
+                  ×
                 </button>
               </div>
             </div>
 
-            {/* body: messages */}
             <div
               ref={messagesRef}
-              className="flex-1 overflow-auto px-3 py-3 space-y-3 bg-gradient-to-br from-blue-50 to-slate-50"
+              className="flex-1 space-y-3 overflow-auto bg-gradient-to-br from-sky-50 to-slate-50 px-3 py-3 dark:from-slate-950 dark:to-slate-900"
             >
               {chatLoading && (
-                <div className="text-center text-sm text-gray-500">Loading messages...</div>
+                <div className="text-center text-sm text-gray-500 dark:text-slate-400">Loading messages...</div>
               )}
 
               {!chatLoading && !getToken() && (
-                <div className="text-center text-sm text-gray-600">
+                <div className="text-center text-sm text-gray-600 dark:text-slate-300">
                   You must be logged in to view and send messages.
                 </div>
               )}
 
               {!chatLoading && getToken() && chatMessages.length === 0 && (
-                <div className="text-center text-sm text-gray-600">
-                  No messages yet. Send the first message — our team will reply soon.
+                <div className="text-center text-sm text-gray-600 dark:text-slate-300">
+                  No messages yet. Send the first message and our team will reply soon.
                 </div>
               )}
 
-              {/* messages list */}
               {!chatLoading && getToken() && chatMessages.length > 0 && (
                 <div className="space-y-2">
-                  {chatMessages.map((m) => {
-                    const isUser = m.sender_type === "user";
+                  {chatMessages.map((message) => {
+                    const isUser = message.sender_type === "user";
+
                     return (
                       <div
-                        key={m.id}
+                        key={message.id}
                         className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[75%] px-3 py-2 rounded-lg break-words text-sm ${
-                            isUser ? "bg-gradient-to-r from-slate-900 to-blue-900 text-white rounded-br-none" : "bg-white text-slate-800 rounded-bl-none border border-blue-200"
+                          className={`max-w-[75%] break-words rounded-lg px-3 py-2 text-sm ${
+                            isUser
+                              ? "rounded-br-none bg-gradient-to-r from-slate-950 to-sky-800 text-white"
+                              : "rounded-bl-none border border-sky-100 bg-white text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                           }`}
                         >
-                          <div className="whitespace-pre-wrap">{m.message}</div>
-                          <div className={`text-xs mt-1 ${isUser ? "text-white/70" : "text-slate-500"}`}>
-                            {new Date(m.created_at).toLocaleString()}
+                          <div className="whitespace-pre-wrap">{message.message}</div>
+                          <div className={`mt-1 text-xs ${isUser ? "text-white/70" : "text-slate-500"}`}>
+                            {new Date(message.created_at).toLocaleString()}
                           </div>
                         </div>
                       </div>
@@ -372,29 +419,29 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* error */}
-              {chatError && <div className="text-sm text-red-500 text-center">{chatError}</div>}
+              {chatError && <div className="text-center text-sm text-red-500">{chatError}</div>}
             </div>
 
-            {/* footer: input */}
-            <div className="px-3 py-3 border-t bg-white">
+            <div className="border-t border-sky-100 bg-white px-3 py-3 dark:border-slate-700 dark:bg-slate-900">
               {!getToken() ? (
                 <div className="flex flex-col gap-2">
-                  <div className="text-sm text-slate-700">Log in to chat with support.</div>
+                  <div className="text-sm text-slate-700 dark:text-slate-200">Log in to chat with support.</div>
                 </div>
               ) : (
                 <div className="flex gap-2">
                   <textarea
                     value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
+                    onChange={(event) => setMessageInput(event.target.value)}
                     onKeyDown={onInputKeyDown}
                     placeholder="Write a message... (Enter to send)"
-                    className="flex-1 resize-none h-12 p-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="h-12 flex-1 resize-none rounded-lg border border-sky-200 p-2 focus:ring-2 focus:ring-amber-400 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                   />
                   <button
                     onClick={sendMessage}
                     disabled={sending || messageInput.trim() === ""}
-                    className={`px-4 rounded-lg transition ${sending ? "bg-slate-400 text-white" : "bg-blue-600 text-white hover:bg-blue-700"}`}
+                    className={`rounded-lg px-4 transition ${
+                      sending ? "bg-slate-400 text-white" : "bg-amber-400 text-slate-950 hover:bg-amber-300"
+                    }`}
                   >
                     Send
                   </button>

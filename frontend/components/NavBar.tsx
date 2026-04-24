@@ -7,8 +7,9 @@ import {
 } from "@/components/ui/navigation-menu";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export type JwtPayload = {
   user_id: number;
@@ -25,9 +26,11 @@ export default function NavBar() {
   } | null>(null);
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const loadUser = () => {
@@ -66,6 +69,10 @@ export default function NavBar() {
     return () => document.removeEventListener("click", handler);
   }, []);
 
+  useEffect(() => {
+    setSearchQuery(searchParams.get("search") ?? "");
+  }, [searchParams]);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     setUser(null);
@@ -73,17 +80,24 @@ export default function NavBar() {
     router.push("/login");
   };
 
+  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmed = searchQuery.trim();
+    router.push(trimmed ? `/?search=${encodeURIComponent(trimmed)}` : "/");
+  };
+
   return (
-    <NavigationMenu className="fixed top-0 left-0 bg-gradient-to-r from-slate-900 to-blue-900 p-4 w-screen z-50 shadow-lg border-b-2 border-blue-700">
+    <NavigationMenu className="fixed top-0 left-0 z-50 w-screen border-b border-sky-900/20 bg-gradient-to-r from-slate-950 via-slate-900 to-sky-900 p-4 shadow-lg">
       <div className="relative w-full mx-auto">
         {/* Center */}
         <div className="flex items-center justify-center py-1 relative">
-          <NavigationMenuList className="flex gap-5 items-center list-none p-0 m-0 w-screen justify-center">
+          <NavigationMenuList className="flex w-screen items-center justify-center gap-5 p-0 m-0 list-none">
             {user?.role === "admin" && (
               <NavigationMenuItem className="absolute left-4 list-none">
                 <Link
                   href="/admin"
-                  className="font-semibold text-white hover:text-blue-200 transition duration-200"
+                  className="rounded-full px-3 py-2 font-semibold text-white transition duration-200 hover:bg-white/10 hover:text-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                 >
                   Dashboard
                 </Link>
@@ -91,21 +105,38 @@ export default function NavBar() {
             )}
 
             <NavigationMenuItem className="list-none">
-              <Link href="/" className="font-medium text-white hover:text-blue-200 transition duration-200">
+              <Link
+                href="/"
+                className="rounded-full px-3 py-2 font-medium text-white transition duration-200 hover:bg-white/10 hover:text-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+              >
                 Home
               </Link>
             </NavigationMenuItem>
 
             <NavigationMenuItem>
-              <input
-                type="search"
-                placeholder="Search products..."
-                className="bg-white rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-              />
+              <form onSubmit={handleSearch} className="flex items-center gap-2">
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search products..."
+                  aria-label="Search products"
+                  className="w-64 rounded-full border border-white/15 bg-white px-4 py-2 text-slate-900 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+                <button
+                  type="submit"
+                  className="rounded-full bg-amber-400 px-4 py-2 font-semibold text-slate-950 transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                >
+                  Search
+                </button>
+              </form>
             </NavigationMenuItem>
 
             <NavigationMenuItem>
-              <Link href="/cart" className="font-medium text-white hover:text-blue-200 transition duration-200">
+              <Link
+                href="/cart"
+                className="rounded-full px-3 py-2 font-medium text-white transition duration-200 hover:bg-white/10 hover:text-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+              >
                 Cart
               </Link>
             </NavigationMenuItem>
@@ -114,14 +145,16 @@ export default function NavBar() {
 
         {/* Right side */}
         <div
-          className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center"
+          className="absolute right-4 top-1/2 flex items-center gap-3 -translate-y-1/2"
           ref={dropdownRef}
         >
+          <ThemeToggle />
+
           {user ? (
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="px-4 py-2 text-white font-semibold hover:text-blue-200 flex items-center gap-2 transition duration-200 rounded-lg hover:bg-blue-800/30"
+                className="flex items-center gap-2 rounded-full px-4 py-2 font-semibold text-white transition duration-200 hover:bg-white/10 hover:text-amber-200"
               >
                 Hi, {user.username}
                 <svg
@@ -138,19 +171,17 @@ export default function NavBar() {
 
               {/* Dropdown */}
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 bg-white shadow-xl rounded-lg w-48 py-2 z-50 text-slate-900 border border-slate-200">
+                <div className="absolute right-0 z-50 mt-2 w-52 rounded-2xl border border-slate-200 bg-white py-2 text-slate-900 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50">
                   <Link
                     href="/order-history"
-                    className="block px-4 py-2 hover:bg-blue-50 hover:text-blue-700 transition"
+                    className="block px-4 py-2 transition hover:bg-sky-50 hover:text-sky-700 dark:hover:bg-slate-800 dark:hover:text-sky-300"
                     onClick={() => setDropdownOpen(false)}
                   >
                     Order History
                   </Link>
 
-                  
-
                   <button
-                    className="w-full text-left px-4 py-2 hover:bg-red-50 hover:text-red-600 transition"
+                    className="w-full px-4 py-2 text-left transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
                     onClick={handleLogout}
                   >
                     Logout
@@ -162,13 +193,13 @@ export default function NavBar() {
             <div className="flex gap-3">
               <Link
                 href="/login"
-                className="px-4 py-2 text-white rounded-lg font-semibold hover:bg-blue-800 transition duration-200 border border-blue-600"
+                className="rounded-full border border-white/20 px-4 py-2 font-semibold text-white transition duration-200 hover:bg-white/10"
               >
                 Login
               </Link>
               <Link
                 href="/register"
-                className="px-4 py-2 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-200 bg-blue-600"
+                className="rounded-full bg-amber-400 px-4 py-2 font-semibold text-slate-950 transition duration-200 hover:bg-amber-300"
               >
                 Sign Up
               </Link>
