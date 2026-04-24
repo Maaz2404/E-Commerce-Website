@@ -4,7 +4,7 @@ import ProductCard, { ProductInput } from "@/components/ProductCard";
 import { useCouponStore, Coupon } from "@/store/couponStore";
 import { formatCurrency } from "@/lib/format";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -16,7 +16,7 @@ type SupportMessage = {
   created_at: string;
 };
 
-export default function HomePage() {
+function HomePageContent() {
   const [products, setProducts] = useState<ProductInput[]>([]);
   const { activeCoupons, setActiveCoupons } = useCouponStore();
   const searchParams = useSearchParams();
@@ -452,5 +452,13 @@ export default function HomePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-screen">Loading...</div>}>
+      <HomePageContent />
+    </Suspense>
   );
 }
