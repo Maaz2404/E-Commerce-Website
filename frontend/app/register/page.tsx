@@ -67,11 +67,14 @@ export default function Register() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-sm">
-        <h2 className="text-2xl font-semibold text-center mb-6 text-gray-800">
-          Sign Up
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-slate-50">
+      <div className="bg-white shadow-xl rounded-xl p-8 w-full max-w-sm border border-blue-200">
+        <h2 className="text-3xl font-bold text-center mb-2 text-slate-900">
+          Create Account
         </h2>
+        <p className="text-center text-slate-600 mb-6 text-sm">
+          Join us today
+        </p>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -80,9 +83,13 @@ export default function Register() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel className="text-slate-700">Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter username" {...field} />
+                    <Input 
+                      placeholder="Choose a username" 
+                      {...field}
+                      className="focus:ring-blue-500 focus:border-blue-500"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -94,9 +101,14 @@ export default function Register() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="text-slate-700">Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter email" type="email" {...field} />
+                    <Input 
+                      placeholder="Enter your email" 
+                      type="email" 
+                      {...field}
+                      className="focus:ring-blue-500 focus:border-blue-500"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -108,12 +120,13 @@ export default function Register() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel className="text-slate-700">Password</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter password"
+                      placeholder="Create a password"
                       type="password"
                       {...field}
+                      className="focus:ring-blue-500 focus:border-blue-500"
                     />
                   </FormControl>
                   <FormMessage />
@@ -124,12 +137,19 @@ export default function Register() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600"
+              className="w-full bg-gradient-to-r from-slate-900 to-blue-900 hover:shadow-lg text-white"
             >
               {loading ? "Signing Up..." : "Sign Up"}
             </Button>
           </form>
         </Form>
+
+        <p className="text-center text-slate-600 mt-6 text-sm">
+          Already have an account?{" "}
+          <a href="/login" className="text-blue-600 hover:text-blue-700 font-semibold">
+            Log in here
+          </a>
+        </p>
       </div>
     </div>
   );

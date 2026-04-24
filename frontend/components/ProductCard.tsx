@@ -18,9 +18,9 @@ const ProductCard = (props: ProductInput) => {
   return (
     <Link
       href={`/product/${id}`}
-      className="block max-w-md min-w-3xs rounded overflow-hidden shadow-lg p-4 bg-white hover:shadow-2xl hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+      className="block max-w-md min-w-3xs rounded-lg overflow-hidden shadow-md p-4 bg-white hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer border border-blue-100 hover:border-blue-300"
     >
-      <div className="w-full h-48 relative mb-4 rounded overflow-hidden flex justify-center items-center bg-gray-100">
+      <div className="w-full h-48 relative mb-4 rounded-lg overflow-hidden flex justify-center items-center bg-gradient-to-br from-blue-50 to-slate-100">
         {image_url ? (
           <Image
             src={image_url}
@@ -30,38 +30,40 @@ const ProductCard = (props: ProductInput) => {
             sizes="100%"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-500">
+          <div className="w-full h-full flex items-center justify-center text-slate-400">
             No Image
           </div>
         )}
       </div>
 
-      <h2 className="text-xl font-semibold text-center mb-2 line-clamp-1">
+      <h2 className="text-lg font-bold text-center mb-2 line-clamp-1 text-slate-900">
         {name}
       </h2>
 
       {category && (
-        <p className="text-sm text-center text-gray-500 mb-1">
-          Category: {category}
+        <p className="text-xs text-center text-blue-600 mb-1 font-semibold uppercase tracking-wider">
+          {category}
         </p>
       )}
 
       {description && (
-        <p className="text-gray-700 text-sm text-center mb-3 line-clamp-2">
+        <p className="text-slate-600 text-sm text-center mb-3 line-clamp-2">
           {description}
         </p>
       )}
 
-      <div className="flex justify-between items-center mt-2">
-        <span className="text-lg font-bold text-green-600">
+      <div className="flex justify-between items-center mt-4 gap-2">
+        <span className="text-lg font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-lg">
           ${price.toFixed(2)}
         </span>
         <span
-          className={`text-sm font-medium ${
-            stock > 0 ? "text-blue-600" : "text-red-600"
+          className={`text-sm font-semibold px-3 py-1 rounded-lg ${
+            stock > 0 
+              ? "text-green-700 bg-green-50" 
+              : "text-red-700 bg-red-50"
           }`}
         >
-          {stock > 0 ? `In Stock (${stock})` : "Out of Stock"}
+          {stock > 0 ? `${stock} Left` : "Out"}
         </span>
       </div>
     </Link>

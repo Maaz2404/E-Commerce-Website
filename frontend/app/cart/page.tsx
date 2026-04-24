@@ -92,13 +92,13 @@ export default function CartPage() {
 
   return (
     <>
-      <div className="max-w-4xl mx-auto mt-20 p-6 bg-white shadow-md rounded-lg">
-        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
+      <div className="max-w-4xl mx-auto mt-20 p-6 bg-white shadow-lg rounded-lg border border-blue-200">
+        <h1 className="text-3xl font-bold mb-6 text-center text-slate-900">
           Your Cart
         </h1>
 
         {cart.items.length === 0 ? (
-          <p className="text-center text-gray-500 text-lg">
+          <p className="text-center text-slate-500 text-lg">
             Your cart is empty 🛒
           </p>
         ) : (
@@ -106,20 +106,20 @@ export default function CartPage() {
             {cart.items.map((item) => (
               <div
                 key={item.item_id}
-                className="flex justify-between items-center border-b border-gray-200 pb-4"
+                className="flex justify-between items-center border-b border-blue-200 pb-4"
               >
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-800">
+                  <h2 className="text-lg font-semibold text-slate-900">
                     {item.product_name}
                   </h2>
-                  <p className="text-gray-600">
-                    Price: <span className="font-medium">${item.price}</span>
+                  <p className="text-slate-600">
+                    Price: <span className="font-medium text-blue-700">${item.price}</span>
                   </p>
-                  <p className="text-gray-600">
+                  <p className="text-slate-600">
                     Quantity:{" "}
                     <span className="font-medium">{item.quantity}</span>
                   </p>
-                  <p className="text-gray-800 font-semibold">
+                  <p className="text-slate-900 font-semibold">
                     Total: ${item.total.toFixed(2)}
                   </p>
                 </div>
@@ -127,9 +127,9 @@ export default function CartPage() {
                 <button
                   onClick={() => handleDelete(item.product_id)}
                   disabled={loading}
-                  className={`px-4 py-2 rounded-md text-white font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${
                     loading
-                      ? "bg-gray-400 cursor-not-allowed"
+                      ? "bg-slate-400 cursor-not-allowed"
                       : "bg-red-500 hover:bg-red-600"
                   }`}
                 >
@@ -138,9 +138,9 @@ export default function CartPage() {
               </div>
             ))}
 
-            <div className="border-t border-gray-300 pt-4 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-800">Total:</h2>
-              <p className="text-2xl font-bold text-green-600">
+            <div className="border-t border-blue-200 pt-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-slate-900">Total:</h2>
+              <p className="text-2xl font-bold text-blue-700">
                 ${cart.total_price.toFixed(2)}
               </p>
             </div>
@@ -162,7 +162,7 @@ export default function CartPage() {
         <div className="w-full flex justify-center mt-6 mb-12">
           <button
             onClick={handlePay}
-            className="bg-orange-500 text-white px-8 py-3 rounded-lg text-xl font-semibold hover:bg-orange-600 transition-colors"
+            className="bg-gradient-to-r from-slate-900 to-blue-900 text-white px-8 py-3 rounded-lg text-xl font-semibold hover:shadow-lg transition-all"
           >
             Pay
           </button>

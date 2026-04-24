@@ -74,7 +74,7 @@ export default function NavBar() {
   };
 
   return (
-    <NavigationMenu className="fixed top-0 left-0 bg-orange-500 p-4 w-screen z-50 shadow-md">
+    <NavigationMenu className="fixed top-0 left-0 bg-gradient-to-r from-slate-900 to-blue-900 p-4 w-screen z-50 shadow-lg border-b-2 border-blue-700">
       <div className="relative w-full mx-auto">
         {/* Center */}
         <div className="flex items-center justify-center py-1 relative">
@@ -83,7 +83,7 @@ export default function NavBar() {
               <NavigationMenuItem className="absolute left-4 list-none">
                 <Link
                   href="/admin"
-                  className="font-semibold text-white hover:text-gray-200 transition"
+                  className="font-semibold text-white hover:text-blue-200 transition duration-200"
                 >
                   Dashboard
                 </Link>
@@ -91,7 +91,7 @@ export default function NavBar() {
             )}
 
             <NavigationMenuItem className="list-none">
-              <Link href="/" className="font-medium text-white hover:text-gray-200">
+              <Link href="/" className="font-medium text-white hover:text-blue-200 transition duration-200">
                 Home
               </Link>
             </NavigationMenuItem>
@@ -99,13 +99,13 @@ export default function NavBar() {
             <NavigationMenuItem>
               <input
                 type="search"
-                placeholder="Search..."
-                className="bg-white rounded px-3 py-2 w-64 focus:outline-none"
+                placeholder="Search products..."
+                className="bg-white rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               />
             </NavigationMenuItem>
 
             <NavigationMenuItem>
-              <Link href="/cart" className="font-medium text-white hover:text-gray-200">
+              <Link href="/cart" className="font-medium text-white hover:text-blue-200 transition duration-200">
                 Cart
               </Link>
             </NavigationMenuItem>
@@ -121,7 +121,7 @@ export default function NavBar() {
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="px-3 py-1 text-white font-semibold hover:text-gray-300 flex items-center gap-1"
+                className="px-4 py-2 text-white font-semibold hover:text-blue-200 flex items-center gap-2 transition duration-200 rounded-lg hover:bg-blue-800/30"
               >
                 Hi, {user.username}
                 <svg
@@ -138,10 +138,10 @@ export default function NavBar() {
 
               {/* Dropdown */}
               {dropdownOpen && (
-                <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-md w-40 py-2 z-50 text-black">
+                <div className="absolute right-0 mt-2 bg-white shadow-xl rounded-lg w-48 py-2 z-50 text-slate-900 border border-slate-200">
                   <Link
                     href="/order-history"
-                    className="block px-4 py-2 hover:bg-gray-100"
+                    className="block px-4 py-2 hover:bg-blue-50 hover:text-blue-700 transition"
                     onClick={() => setDropdownOpen(false)}
                   >
                     Order History
@@ -150,7 +150,7 @@ export default function NavBar() {
                   
 
                   <button
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    className="w-full text-left px-4 py-2 hover:bg-red-50 hover:text-red-600 transition"
                     onClick={handleLogout}
                   >
                     Logout
@@ -162,13 +162,13 @@ export default function NavBar() {
             <div className="flex gap-3">
               <Link
                 href="/login"
-                className="px-3 py-1 text-white rounded font-semibold hover:text-gray-300"
+                className="px-4 py-2 text-white rounded-lg font-semibold hover:bg-blue-800 transition duration-200 border border-blue-600"
               >
                 Login
               </Link>
               <Link
                 href="/register"
-                className="px-3 py-1 text-white rounded font-semibold hover:text-gray-300"
+                className="px-4 py-2 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-200 bg-blue-600"
               >
                 Sign Up
               </Link>

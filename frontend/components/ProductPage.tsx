@@ -225,13 +225,13 @@ export default function ProductView({ id }: ProductPageProps) {
   const totalPrice = (product.price * quantity).toFixed(2);
 
   return (
-    <div className="min-h-screen bg-white mt-20">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-50 mt-20">
       {/* PRODUCT SECTION */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
 
           {/* LEFT — IMAGE */}
-          <div className="flex justify-center items-center bg-gray-50 rounded-lg p-8 sticky top-24 h-fit">
+          <div className="flex justify-center items-center bg-white rounded-lg p-8 sticky top-24 h-fit shadow-md border border-blue-200">
             <div className="relative w-full max-w-md h-96">
               {product.image_url ? (
                 <Image
@@ -242,7 +242,7 @@ export default function ProductView({ id }: ProductPageProps) {
                   priority
                 />
               ) : (
-                <div className="text-gray-400 flex justify-center items-center h-full text-lg">
+                <div className="text-slate-400 flex justify-center items-center h-full text-lg">
                   No image available
                 </div>
               )}
@@ -254,7 +254,7 @@ export default function ProductView({ id }: ProductPageProps) {
 
             {/* Product Name */}
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
+              <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-3">
                 {product.name}
               </h1>
 
@@ -263,24 +263,24 @@ export default function ProductView({ id }: ProductPageProps) {
                 {totalReviews > 0 ? (
                   <>
                     <div className="flex items-center gap-2">
-                      <span className="text-yellow-500 text-2xl">★</span>
-                      <span className="text-xl font-semibold text-gray-900">
+                      <span className="text-blue-500 text-2xl">★</span>
+                      <span className="text-xl font-semibold text-slate-900">
                         {avgRating.toFixed(1)}
                       </span>
                     </div>
-                    <span className="text-gray-500">({totalReviews} reviews)</span>
+                    <span className="text-slate-500">({totalReviews} reviews)</span>
                   </>
                 ) : (
-                  <span className="text-gray-500">No reviews yet</span>
+                  <span className="text-slate-500">No reviews yet</span>
                 )}
               </div>
             </div>
 
             {/* Price Section */}
-            <div className="border-t border-b border-gray-200 py-6 space-y-3">
+            <div className="border-t border-b border-blue-200 py-6 space-y-3">
               <div>
-                <p className="text-gray-600 text-sm font-medium mb-1">Price</p>
-                <p className="text-4xl font-bold text-gray-900">
+                <p className="text-slate-600 text-sm font-medium mb-1">Price</p>
+                <p className="text-4xl font-bold text-blue-700">
                   ${product.price.toFixed(2)}
                 </p>
               </div>
@@ -299,22 +299,22 @@ export default function ProductView({ id }: ProductPageProps) {
             <div className="space-y-4">
               {/* Quantity Selector */}
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-3">Quantity</p>
-                <div className="flex items-center border border-gray-300 rounded-lg w-fit">
+                <p className="text-sm font-medium text-slate-700 mb-3">Quantity</p>
+                <div className="flex items-center border border-blue-300 rounded-lg w-fit focus-within:ring-2 focus-within:ring-blue-500">
                   <button
                     onClick={() => setQuantity(q => Math.max(1, q - 1))}
                     disabled={isOutOfStock}
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition disabled:opacity-50"
+                    className="px-4 py-2 text-slate-600 hover:bg-blue-50 transition disabled:opacity-50"
                   >
                     −
                   </button>
-                  <span className="px-6 py-2 font-semibold text-gray-900 border-l border-r border-gray-300">
+                  <span className="px-6 py-2 font-semibold text-slate-900 border-l border-r border-blue-300">
                     {quantity}
                   </span>
                   <button
                     onClick={() => setQuantity(q => q + 1)}
                     disabled={isOutOfStock}
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition disabled:opacity-50"
+                    className="px-4 py-2 text-slate-600 hover:bg-blue-50 transition disabled:opacity-50"
                   >
                     +
                   </button>
@@ -327,10 +327,10 @@ export default function ProductView({ id }: ProductPageProps) {
                 disabled={isOutOfStock || loading || added}
                 className={`w-full py-3 px-6 rounded-lg font-bold text-lg transition ${
                   isOutOfStock
-                    ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                    ? "bg-slate-400 text-slate-600 cursor-not-allowed"
                     : added
                     ? "bg-green-500 text-white"
-                    : "bg-orange-500 hover:bg-orange-600 text-white"
+                    : "bg-gradient-to-r from-slate-900 to-blue-900 hover:shadow-lg text-white"
                 }`}
               >
                 {loading ? "Adding..." : added ? "✔ Added to Cart" : "Add to Cart"}
@@ -349,28 +349,28 @@ export default function ProductView({ id }: ProductPageProps) {
       </div>
 
       {/* REVIEWS SECTION */}
-      <div className="bg-gray-50 py-16">
+      <div className="bg-white border-t border-blue-200 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Reviews Heading */}
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">Customer Reviews</h2>
+          <h2 className="text-3xl font-bold text-slate-900 mb-8">Customer Reviews</h2>
 
           {/* Write/Edit Review Form */}
-          <div className="bg-white rounded-lg shadow-md p-8 mb-8 border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">
+          <div className="bg-blue-50 rounded-lg shadow-md p-8 mb-8 border border-blue-200">
+            <h3 className="text-xl font-bold text-slate-900 mb-6">
               {userReview ? "Update Your Review" : "Write a Review"}
             </h3>
 
             {/* Rating Stars */}
             <div className="mb-6">
-              <p className="text-sm font-medium text-gray-700 mb-3">Your Rating</p>
+              <p className="text-sm font-medium text-slate-700 mb-3">Your Rating</p>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map(star => (
                   <button
                     key={star}
                     onClick={() => setRatingInput(star)}
                     className={`text-4xl transition transform hover:scale-110 ${
-                      ratingInput >= star ? "text-yellow-400" : "text-gray-300"
+                      ratingInput >= star ? "text-blue-500" : "text-slate-300"
                     }`}
                   >
                     ★
@@ -381,11 +381,11 @@ export default function ProductView({ id }: ProductPageProps) {
 
             {/* Comment Textarea */}
             <div className="mb-6">
-              <label className="text-sm font-medium text-gray-700 block mb-3">
+              <label className="text-sm font-medium text-slate-700 block mb-3">
                 Your Comment
               </label>
               <textarea
-                className="w-full p-4 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                className="w-full p-4 border border-blue-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 rows={4}
                 placeholder="Share your experience with this product..."
                 value={commentInput}

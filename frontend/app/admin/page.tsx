@@ -61,23 +61,23 @@ export default function AdminPage() {
     );
 
   return (
-    <div className="p-8 flex flex-col gap-6 w-full">
+    <div className="p-8 flex flex-col gap-6 w-full bg-gradient-to-br from-blue-50 to-slate-50 min-h-screen">
       <div className="w-full text-center">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-gray-600 mt-2">Quick overview of platform stats</p>
+        <h1 className="text-4xl font-bold text-slate-900">Admin Dashboard</h1>
+        <p className="text-slate-600 mt-2">Quick overview of platform stats</p>
       </div>
 
       {/* TOP ROW */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
         <DashboardCard title="Total Users" value={stats.users.total} accent="bg-blue-500" />
-        <DashboardCard title="Admins" value={stats.users.admins} accent="bg-purple-500" />
+        <DashboardCard title="Admins" value={stats.users.admins} accent="bg-slate-900" />
         <DashboardCard title="Total Orders" value={stats.orders.total_orders} accent="bg-green-500" />
-        <DashboardCard title="Revenue (All Time)" value={`$${stats.orders.total_revenue}`} accent="bg-orange-500" />
+        <DashboardCard title="Revenue (All Time)" value={`$${stats.orders.total_revenue}`} accent="bg-blue-700" />
       </div>
 
       {/* SECOND ROW */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full mt-6">
-        <DashboardCard title="Pending Orders" value={stats.orders.pending_orders} accent="bg-yellow-400" />
+        <DashboardCard title="Pending Orders" value={stats.orders.pending_orders} accent="bg-yellow-500" />
         <DashboardCard title="Completed Orders" value={stats.orders.completed_orders} accent="bg-emerald-500" />
         <DashboardCard title="Products" value={stats.products.total_products} accent="bg-indigo-500" />
         <DashboardCard title="Out of Stock" value={stats.products.out_of_stock} accent="bg-red-500" />
@@ -86,9 +86,9 @@ export default function AdminPage() {
       {/* THIRD ROW */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full mt-6">
         <DashboardCard title="Active Coupons" value={stats.coupons.active} accent="bg-teal-500" />
-        <DashboardCard title="Expired Coupons" value={stats.coupons.expired} accent="bg-zinc-500" />
+        <DashboardCard title="Expired Coupons" value={stats.coupons.expired} accent="bg-slate-400" />
         <DashboardCard title="Unread Support" value={stats.support.unread_messages} accent="bg-pink-500" />
-        <DashboardCard title="Support Tickets" value={stats.support.total_support_messages} accent="bg-slate-500" />
+        <DashboardCard title="Support Tickets" value={stats.support.total_support_messages} accent="bg-blue-900" />
       </div>
     </div>
   );
@@ -105,11 +105,11 @@ function DashboardCard({
   accent: string;
 }) {
   return (
-    <div className="bg-white rounded-xl p-4 shadow-sm flex items-center gap-4">
+    <div className="bg-white rounded-xl p-4 shadow-md border border-blue-200 hover:shadow-lg transition-shadow flex items-center gap-4">
       <div className={`w-2 h-12 rounded ${accent}`} />
       <div className="flex-1">
-        <span className="text-sm text-gray-500">{title}</span>
-        <div className="text-2xl font-bold mt-1 text-gray-900">{value}</div>
+        <span className="text-sm text-slate-500">{title}</span>
+        <div className="text-2xl font-bold mt-1 text-slate-900">{value}</div>
       </div>
     </div>
   );

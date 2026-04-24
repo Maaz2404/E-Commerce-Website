@@ -204,12 +204,12 @@ export default function HomePage() {
 
   return (
     <div className="pt-20 m-5 flex">
-      <div className="absolute left-5 top-24 flex gap-3 bg-white p-3 rounded shadow-md z-30">
-  <span className="font-semibold">Category:</span>
+      <div className="absolute left-5 top-24 flex gap-3 bg-white p-3 rounded-lg shadow-lg z-30 border border-blue-200">
+  <span className="font-semibold text-slate-900">Category:</span>
   <select
     value={selectedCategory}
     onChange={(e) => setSelectedCategory(e.target.value)}
-    className="border p-1 rounded"
+    className="border border-blue-300 p-1 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
   >
     {categories.map((c) => (
       <option key={c} value={c}>
@@ -231,11 +231,11 @@ export default function HomePage() {
 
       {/* Floating Coupons Panel */}
       {showCoupons && activeCoupons.length > 0 && (
-        <div className="fixed right-5 top-20 w-64 bg-white shadow-lg rounded-lg p-4 z-40">
+        <div className="fixed right-5 top-20 w-64 bg-white shadow-xl rounded-lg p-4 z-40 border border-blue-200">
           <div className="flex justify-between items-center mb-2">
-            <h2 className="font-bold text-lg">Active Coupons</h2>
+            <h2 className="font-bold text-lg text-slate-900">Active Coupons</h2>
             <button
-              className="text-gray-500 hover:text-gray-800"
+              className="text-slate-500 hover:text-slate-800 transition"
               onClick={() => setShowCoupons(false)}
             >
               ✕
@@ -245,11 +245,11 @@ export default function HomePage() {
             {activeCoupons.map((c: Coupon) => (
               <div
                 key={c.id}
-                className="bg-orange-100 p-2 rounded-md hover:bg-orange-200 cursor-pointer"
+                className="bg-blue-50 p-2 rounded-lg hover:bg-blue-100 cursor-pointer border border-blue-200 transition"
                 onClick={() => navigator.clipboard.writeText(c.code)}
               >
-                <p className="font-semibold">{c.code}</p>
-                <p className="text-sm text-gray-700">
+                <p className="font-semibold text-blue-700">{c.code}</p>
+                <p className="text-sm text-slate-600">
                   {c.discount_type === "percent"
                     ? `${c.discount_value}% off`
                     : `$${c.discount_value} off`}
@@ -266,7 +266,7 @@ export default function HomePage() {
         {!chatOpen && (
           <button
             onClick={() => openChat()}
-            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-full shadow-lg focus:outline-none"
+            className="flex items-center gap-2 bg-gradient-to-r from-slate-900 to-blue-900 hover:shadow-lg text-white px-4 py-3 rounded-full shadow-lg focus:outline-none transition"
             title="Support"
           >
             <span className="text-xl">💬</span>
@@ -278,9 +278,9 @@ export default function HomePage() {
         {chatOpen && (
           <div className="w-80 md:w-96 h-96 bg-white shadow-2xl rounded-lg overflow-hidden flex flex-col">
             {/* header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-orange-500 text-white">
+            <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-900 to-blue-900 text-white">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">?</div>
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-semibold">?</div>
                 <div>
                   <div className="font-semibold">Support</div>
                   <div className="text-xs opacity-90">We're here to help</div>
@@ -308,7 +308,7 @@ export default function HomePage() {
             {/* body: messages */}
             <div
               ref={messagesRef}
-              className="flex-1 overflow-auto px-3 py-3 space-y-3 bg-gray-50"
+              className="flex-1 overflow-auto px-3 py-3 space-y-3 bg-gradient-to-br from-blue-50 to-slate-50"
             >
               {chatLoading && (
                 <div className="text-center text-sm text-gray-500">Loading messages...</div>
@@ -338,11 +338,11 @@ export default function HomePage() {
                       >
                         <div
                           className={`max-w-[75%] px-3 py-2 rounded-lg break-words text-sm ${
-                            isUser ? "bg-orange-500 text-white rounded-br-none" : "bg-white text-gray-800 rounded-bl-none border"
+                            isUser ? "bg-gradient-to-r from-slate-900 to-blue-900 text-white rounded-br-none" : "bg-white text-slate-800 rounded-bl-none border border-blue-200"
                           }`}
                         >
                           <div className="whitespace-pre-wrap">{m.message}</div>
-                          <div className={`text-xs mt-1 ${isUser ? "text-white/80" : "text-gray-500"}`}>
+                          <div className={`text-xs mt-1 ${isUser ? "text-white/70" : "text-slate-500"}`}>
                             {new Date(m.created_at).toLocaleString()}
                           </div>
                         </div>
@@ -360,7 +360,7 @@ export default function HomePage() {
             <div className="px-3 py-3 border-t bg-white">
               {!getToken() ? (
                 <div className="flex flex-col gap-2">
-                  <div className="text-sm text-gray-700">Log in to chat with support.</div>
+                  <div className="text-sm text-slate-700">Log in to chat with support.</div>
                 </div>
               ) : (
                 <div className="flex gap-2">
@@ -369,12 +369,12 @@ export default function HomePage() {
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyDown={onInputKeyDown}
                     placeholder="Write a message... (Enter to send)"
-                    className="flex-1 resize-none h-12 p-2 border rounded"
+                    className="flex-1 resize-none h-12 p-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                   <button
                     onClick={sendMessage}
                     disabled={sending || messageInput.trim() === ""}
-                    className={`px-4 rounded ${sending ? "bg-gray-400 text-white" : "bg-orange-500 text-white hover:bg-orange-600"}`}
+                    className={`px-4 rounded-lg transition ${sending ? "bg-slate-400 text-white" : "bg-blue-600 text-white hover:bg-blue-700"}`}
                   >
                     Send
                   </button>
