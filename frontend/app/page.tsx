@@ -219,14 +219,34 @@ export default function HomePage() {
   </select>
 </div>
 
-      {/* Products Grid */}
-      <div className="flex-1 grid items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mt-20 gap-5">
-        {products
-        .filter((p) => selectedCategory === "All" || p.category === selectedCategory)
-        .map((product: ProductInput) => (
-          <ProductCard key={product.id} {...product} />
-      ))}
+      <div className="flex-1 mt-20">
+        <section className="mb-8 rounded-3xl bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 px-6 py-8 text-white shadow-2xl">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="mb-2 inline-flex rounded-full bg-white/20 px-3 py-1 text-sm font-semibold uppercase tracking-[0.2em]">
+                April 2026 Refresh
+              </p>
+              <h1 className="text-3xl font-black uppercase tracking-tight md:text-5xl">
+                Fresh look, same store, now live on Vercel
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm text-white/90 md:text-base">
+                This banner was added to the v1 branch so we can confirm production updates are reaching the website.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-slate-950/20 px-4 py-3 text-sm font-semibold backdrop-blur">
+              Visible check: if you can see this orange banner, the newest v1 deployment is live.
+            </div>
+          </div>
+        </section>
 
+        {/* Products Grid */}
+        <div className="grid items-center grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {products
+          .filter((p) => selectedCategory === "All" || p.category === selectedCategory)
+          .map((product: ProductInput) => (
+            <ProductCard key={product.id} {...product} />
+        ))}
+        </div>
       </div>
 
       {/* Floating Coupons Panel */}
