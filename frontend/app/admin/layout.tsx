@@ -25,20 +25,20 @@ export default function AdminLayout({
 
   return (
     <SidebarProvider>
-      <div className="top-0 left-0 flex min-h-screen pt-10 mt-10 bg-gray-100 relative">
+      <div className="top-0 left-0 flex min-h-screen pt-10 mt-10 bg-slate-50 relative">
         {/* Sidebar */}
         <aside
           className={cn(
-            "fixed md:static inset-y-0 left-0 z-40 w-64 bg-gray-900 text-gray-100 flex flex-col transform transition-transform duration-200 ease-in-out",
+            "fixed md:static inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-100 flex flex-col transform transition-transform duration-200 ease-in-out",
             isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
           )}
         >
-          <div className="p-4 text-lg font-bold border-b border-gray-800 flex justify-between items-center">
+          <div className="p-4 text-lg font-bold border-b border-slate-800 flex justify-between items-center">
             Admin Panel
             {/* close button on mobile */}
             <button
               onClick={() => setIsOpen(false)}
-              className="md:hidden text-gray-400 hover:text-white"
+              className="md:hidden text-slate-400 hover:text-white"
             >
               ✕
             </button>
@@ -50,8 +50,8 @@ export default function AdminLayout({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "block px-4 py-2 rounded-md hover:bg-gray-800 transition",
-                  pathname === item.href && "bg-gray-800 text-white"
+                  "block px-4 py-2 rounded-md hover:bg-slate-800 transition text-slate-200 hover:text-blue-300",
+                  pathname === item.href && "bg-blue-900 text-white border-l-4 border-blue-500"
                 )}
                 onClick={() => setIsOpen(false)} // close menu when clicking a link
               >
@@ -60,7 +60,7 @@ export default function AdminLayout({
             ))}
           </nav>
 
-          <div className="p-4 border-t border-gray-800 text-sm text-gray-400">
+          <div className="p-4 border-t border-slate-800 text-sm text-slate-400">
             © {new Date().getFullYear()}
           </div>
         </aside>
@@ -75,21 +75,21 @@ export default function AdminLayout({
 
         {/* Main content */}
         <div className="flex-1 flex flex-col">
-          <header className="h-14 bg-white border-b flex items-center justify-between px-6 shadow-sm">
+          <header className="h-14 bg-gradient-to-r from-slate-900 to-blue-900 border-b border-blue-800 flex items-center justify-between px-6 shadow-md">
             <div className="flex items-center gap-2">
               {/* Hamburger button */}
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="md:hidden text-gray-600 text-2xl focus:outline-none"
+                className="md:hidden text-slate-300 text-2xl focus:outline-none hover:text-white"
               >
                 ☰
               </button>
-              <h1 className="font-semibold text-gray-800">Admin</h1>
+              <h1 className="font-semibold text-white">Admin Panel</h1>
             </div>
-            <div className="text-sm text-gray-600">Welcome, Admin</div>
+            <div className="text-sm text-blue-100">Welcome, Admin</div>
           </header>
 
-          <main className="flex-1 flex flex-col min-h-[calc(100vh-3.5rem)] p-6">
+          <main className="flex-1 flex flex-col min-h-[calc(100vh-3.5rem)] p-6 bg-slate-50">
             {children}
           </main>
         </div>

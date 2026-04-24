@@ -84,15 +84,15 @@ export default function CartPage() {
 
   if (!cart) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <p className="text-gray-600 text-lg">Loading your cart...</p>
+      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-blue-50 to-slate-50">
+        <p className="text-slate-600 text-lg">Loading your cart...</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="max-w-4xl mx-auto mt-20 p-6 bg-white shadow-lg rounded-lg border border-blue-200">
+      <div className="max-w-4xl mx-auto mt-20 p-6 bg-white shadow-xl rounded-xl border border-blue-200 mb-8">
         <h1 className="text-3xl font-bold mb-6 text-center text-slate-900">
           Your Cart
         </h1>
@@ -106,14 +106,14 @@ export default function CartPage() {
             {cart.items.map((item) => (
               <div
                 key={item.item_id}
-                className="flex justify-between items-center border-b border-blue-200 pb-4"
+                className="flex justify-between items-center border-b border-slate-200 pb-4 hover:bg-slate-50 transition rounded-lg px-4 py-2"
               >
                 <div>
                   <h2 className="text-lg font-semibold text-slate-900">
                     {item.product_name}
                   </h2>
                   <p className="text-slate-600">
-                    Price: <span className="font-medium text-blue-700">${item.price}</span>
+                    Price: <span className="font-medium text-blue-600">${item.price}</span>
                   </p>
                   <p className="text-slate-600">
                     Quantity:{" "}
@@ -130,7 +130,7 @@ export default function CartPage() {
                   className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${
                     loading
                       ? "bg-slate-400 cursor-not-allowed"
-                      : "bg-red-500 hover:bg-red-600"
+                      : "bg-red-600 hover:bg-red-700"
                   }`}
                 >
                   {loading ? "Deleting..." : "Delete"}
@@ -138,9 +138,9 @@ export default function CartPage() {
               </div>
             ))}
 
-            <div className="border-t border-blue-200 pt-4 flex justify-between items-center">
+            <div className="border-t border-slate-200 pt-4 flex justify-between items-center bg-slate-50 rounded-lg px-4 py-3">
               <h2 className="text-xl font-bold text-slate-900">Total:</h2>
-              <p className="text-2xl font-bold text-blue-700">
+              <p className="text-2xl font-bold text-blue-600">
                 ${cart.total_price.toFixed(2)}
               </p>
             </div>
@@ -149,8 +149,8 @@ export default function CartPage() {
 
         {message && (
           <p
-            className={`mt-4 text-center font-medium ${
-              message.startsWith("✅") ? "text-green-600" : "text-red-500"
+            className={`mt-4 text-center font-medium p-3 rounded-lg ${
+              message.startsWith("✅") ? "text-green-700 bg-green-50" : "text-red-700 bg-red-50"
             }`}
           >
             {message}
