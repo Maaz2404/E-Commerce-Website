@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from database import init_db
+from migrate import run_migrations
 from routes.users import users_bp
 from routes.products import products_bp
 from routes.carts import cart_bp
@@ -22,6 +23,11 @@ load_dotenv()
 print("SECRET_KEY:", os.getenv("SECRET_KEY"))
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+
+# Run migrations to ensure schema is up-to-date
+print("🔄 Running database migrations...")
+run_migrations()
+print("✅ Migrations completed.")
 
 CORS(
     app,
