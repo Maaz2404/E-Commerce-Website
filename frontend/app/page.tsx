@@ -4,9 +4,20 @@ import { ProductInput } from "@/components/ProductCard";
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
 export default async function Home() {
-  const res = await fetch(`${baseURL}/products`);
-  const productsData = await res.json();
-  const products: ProductInput[] = productsData?.products ?? [];
+  let products: ProductInput[] = [];
+  let catalogAvailable = true;
+
+  try {
+    const res = await fetch(`${baseURL}/products`, { cache: "no-store" });
+    if (!res.ok) {
+      throw new Error(`Catalog request failed with ${res.status}`);
+    }
+
+    const productsData = await res.json();
+    products = productsData?.products ?? [];
+  } catch {
+    catalogAvailable = false;
+  }
 
   return (
     <div className="px-5 pb-12 pt-28">
@@ -29,7 +40,9 @@ export default async function Home() {
             Featured Products
           </h2>
           <p className="mt-2 text-slate-300">
-            Browse the catalog in the refreshed theme.
+            {catalogAvailable
+              ? "Browse the catalog in the refreshed theme."
+              : "Theme preview is live. Connect a public backend URL to load products on Vercel."}
           </p>
         </div>
 
