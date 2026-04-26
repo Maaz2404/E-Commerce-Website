@@ -137,6 +137,7 @@ export default function AdminProductsPage() {
       });
 
       const result = await res.json();
+      console.log('Add product response:', result, 'status:', res.status);
       if (!res.ok) {
         alert(result.error || "Failed to add product");
         return;
