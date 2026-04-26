@@ -177,10 +177,11 @@ export default function AdminProductsPage() {
             const currentData = editedData[product.id] || product;
 
             return (
-              <div
-                key={product.id}
-                className="bg-white border p-4 my-2 w-full rounded-lg shadow-sm flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
-              >
+                <div
+                  key={product.id}
+                  className="bg-card border p-4 my-2 w-full rounded-lg shadow-sm flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
+                >
+
                 <div className="flex-1">
                   {isEditing ? (
                     <>
@@ -241,14 +242,15 @@ export default function AdminProductsPage() {
                     <>
                       <h2 className="text-xl font-semibold">{product.name}</h2>
                       {product.description && (
-                        <p className="text-gray-600">{product.description}</p>
-                      )}
-                      <p className="text-gray-800 font-bold mt-2">
-                        ${product.price} <span className="text-sm text-gray-600">| Stock: {product.stock}</span>
-                      </p>
-                      <p className="text-gray-500 text-sm mt-1">
-                        {product.category || "Uncategorized"}
-                      </p>
+                      <p className="text-muted-foreground">{product.description}</p>
+                    )}
+                    <p className="font-foreground font-bold mt-2">
+                      ${product.price} <span className="text-sm text-muted-foreground">| Stock: {product.stock}</span>
+                    </p>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      {product.category || "Uncategorized"}
+                    </p>
+
                     </>
                   )}
                 </div>
@@ -297,10 +299,12 @@ export default function AdminProductsPage() {
        </div>
  
        {/* RIGHT SIDE - Add Product Form */}
-      <div className="w-full sm:w-96 border rounded-lg shadow-md p-6 bg-white self-start">
-         <h2 className="text-xl font-bold mb-4 text-gray-800 text-center">
+      <div className="w-full sm:w-96 border rounded-lg shadow-md p-6 bg-card self-start">
+
+         <h2 className="text-xl font-bold mb-4 text-foreground text-center">
            Add New Product
          </h2>
+
       <div className="space-y-3">
         <label className="text-sm font-medium text-muted-foreground">Name</label>
         <input
