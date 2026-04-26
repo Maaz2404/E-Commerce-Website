@@ -18,9 +18,11 @@ const ProductCard = (props: ProductInput) => {
   return (
     <Link
       href={`/product/${id}`}
-      className="block max-w-md min-w-3xs rounded-lg overflow-hidden shadow-md p-4 bg-white hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer border border-blue-100 hover:border-blue-300"
+      className="block max-w-md min-w-3xs rounded-lg overflow-hidden shadow-md p-4 bg-card hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer border border-border hover:border-ring"
+
     >
-      <div className="w-full h-48 relative mb-4 rounded-lg overflow-hidden flex justify-center items-center bg-gradient-to-br from-blue-50 to-slate-100">
+      <div className="w-full h-48 relative mb-4 rounded-lg overflow-hidden flex justify-center items-center bg-muted">
+
         {image_url ? (
           <Image
             src={image_url}
@@ -30,13 +32,14 @@ const ProductCard = (props: ProductInput) => {
             sizes="100%"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-slate-400">
+        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
             No Image
           </div>
         )}
       </div>
 
-      <h2 className="text-lg font-bold text-center mb-2 line-clamp-1 text-slate-900">
+      <h2 className="text-lg font-bold text-center mb-2 line-clamp-1 text-foreground">
+
         {name}
       </h2>
 

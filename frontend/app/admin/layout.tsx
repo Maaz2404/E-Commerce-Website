@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function AdminLayout({
   children,
@@ -25,7 +26,7 @@ export default function AdminLayout({
 
   return (
     <SidebarProvider>
-      <div className="top-0 left-0 flex min-h-screen pt-10 mt-10 bg-slate-50 relative">
+      <div className="top-0 left-0 flex min-h-screen pt-10 mt-10 bg-background relative">
         {/* Sidebar */}
         <aside
           className={cn(
@@ -86,12 +87,16 @@ export default function AdminLayout({
               </button>
               <h1 className="font-semibold text-white">Admin Panel</h1>
             </div>
-            <div className="text-sm text-blue-100">Welcome, Admin</div>
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-foreground">Welcome, Admin</div>
+              <ThemeToggle />
+            </div>
           </header>
 
-          <main className="flex-1 flex flex-col min-h-[calc(100vh-3.5rem)] p-6 bg-slate-50">
+          <main className="flex-1 flex flex-col min-h-[calc(100vh-3.5rem)] p-6 bg-background">
             {children}
           </main>
+
         </div>
       </div>
     </SidebarProvider>
