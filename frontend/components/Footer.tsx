@@ -38,7 +38,7 @@ export default function Footer() {
             <h3 className="text-lg font-bold mb-3 text-blue-300">Contact</h3>
             <p className="text-gray-300 text-sm">
               Email: support@e-commerce.com<br />
-              Phone: +92 312-241 7654
+              Phone: +92 312-2417654
             </p>
           </div>
         </div>
@@ -50,7 +50,7 @@ export default function Footer() {
               © 2026 E-Commerce Platform. All rights reserved.
             </p>
             <p className="text-blue-300 font-semibold mt-2">
-              Developed by the Team Markhor
+              Developed by the Team Markhors
             </p>
           </div>
         </div>
