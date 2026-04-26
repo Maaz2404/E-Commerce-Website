@@ -184,7 +184,7 @@ export default function AdminProductsPage() {
                 <div className="flex-1">
                   {isEditing ? (
                     <>
-                      <label className="text-sm font-medium text-gray-700">Name</label>
+                      <label className="text-sm font-medium text-muted-foreground">Name</label>
                       <input
                         name="name"
                         value={currentData.name}
@@ -192,7 +192,7 @@ export default function AdminProductsPage() {
                         className="border p-2 mb-2 w-full rounded"
                       />
 
-                      <label className="text-sm font-medium text-gray-700">Description</label>
+                      <label className="text-sm font-medium text-muted-foreground">Description</label>
                       <textarea
                         name="description"
                         value={currentData.description}
@@ -202,7 +202,7 @@ export default function AdminProductsPage() {
 
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-sm font-medium text-gray-700">Price</label>
+                          <label className="text-sm font-medium text-muted-foreground">Price</label>
                           <input
                             name="price"
                             value={currentData.price}
@@ -211,7 +211,7 @@ export default function AdminProductsPage() {
                           />
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">Stock</label>
+                          <label className="text-sm font-medium text-muted-foreground">Stock</label>
                           <input
                             name="stock"
                             value={currentData.stock}
@@ -221,7 +221,7 @@ export default function AdminProductsPage() {
                         </div>
                       </div>
 
-                      <label className="text-sm font-medium text-gray-700">Category</label>
+                      <label className="text-sm font-medium text-muted-foreground">Category</label>
                       <input
                         name="category"
                         value={currentData.category}
@@ -229,7 +229,7 @@ export default function AdminProductsPage() {
                         className="border p-2 mb-2 w-full rounded"
                       />
 
-                      <label className="text-sm font-medium text-gray-700">Image URL</label>
+                      <label className="text-sm font-medium text-muted-foreground">Image URL</label>
                       <input
                         name="image_url"
                         value={currentData.image_url}
@@ -302,7 +302,7 @@ export default function AdminProductsPage() {
            Add New Product
          </h2>
       <div className="space-y-3">
-        <label className="text-sm font-medium text-gray-700">Name</label>
+        <label className="text-sm font-medium text-muted-foreground">Name</label>
         <input
           name="name"
           value={newProduct.name}
@@ -311,7 +311,7 @@ export default function AdminProductsPage() {
           className="border p-2 mb-1 w-full rounded"
         />
 
-        <label className="text-sm font-medium text-gray-700">Description</label>
+        <label className="text-sm font-medium text-muted-foreground">Description</label>
         <textarea
           name="description"
           value={newProduct.description}
@@ -322,7 +322,7 @@ export default function AdminProductsPage() {
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-sm font-medium text-gray-700">Price</label>
+            <label className="text-sm font-medium text-muted-foreground">Price</label>
             <input
               name="price"
               type="number"
@@ -333,7 +333,7 @@ export default function AdminProductsPage() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700">Stock</label>
+            <label className="text-sm font-medium text-muted-foreground">Stock</label>
             <input
               name="stock"
               type="number"
@@ -346,7 +346,7 @@ export default function AdminProductsPage() {
           </div>
         </div>
 
-        <label className="text-sm font-medium text-gray-700">Category</label>
+        <label className="text-sm font-medium text-muted-foreground">Category</label>
         <input
           name="category"
           value={newProduct.category}
@@ -355,7 +355,7 @@ export default function AdminProductsPage() {
           className="border p-2 mb-1 w-full rounded"
         />
 
-        <label className="text-sm font-medium text-gray-700">Image URL</label>
+        <label className="text-sm font-medium text-muted-foreground">Image URL</label>
         <input
           name="image_url"
           value={newProduct.image_url}
