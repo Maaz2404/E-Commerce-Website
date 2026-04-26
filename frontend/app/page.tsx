@@ -218,7 +218,7 @@ function HomePageContent() {
                   Easy Shopping
                 </p>
                 <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white md:text-5xl">
-                  Find essentials faster, with less guesswork.
+                  Find essentials faster, now with an even smoother experience.
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 md:text-base">
                   Browse by category, search by name, and get help quickly if you need it.
