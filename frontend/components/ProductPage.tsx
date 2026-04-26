@@ -195,7 +195,7 @@ export default function ProductView({ id }: ProductPageProps) {
   // -----------------------------------------------------
   const handleAddToCart = async () => {
     const token = localStorage.getItem("token");
-    if (!token) return setMessage("⚠️ login first");
+    if (!token) return setMessage("⚠️ Login first");
 
     try {
       setLoading(true);

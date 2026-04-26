@@ -37,8 +37,8 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-bold mb-3 text-blue-300">Contact</h3>
             <p className="text-gray-300 text-sm">
-              Email: support@ecommerce.com<br />
-              Phone: +1 (555) 000-0000
+              Email: support@e-commerce.com<br />
+              Phone: +92 312-241 7654
             </p>
           </div>
         </div>
@@ -47,10 +47,10 @@ export default function Footer() {
         <div className="border-t border-blue-700 pt-6">
           <div className="text-center">
             <p className="text-gray-400 text-sm">
-              © 2024 E-Commerce Platform. All rights reserved.
+              © 2026 E-Commerce Platform. All rights reserved.
             </p>
             <p className="text-blue-300 font-semibold mt-2">
-              Developed by Fastians
+              Developed by the Team Markhor
             </p>
           </div>
         </div>
