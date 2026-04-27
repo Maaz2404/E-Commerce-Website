@@ -91,7 +91,7 @@ def get_product(product_id):
 
 # 🟢 Add a new product
 
-@products_bp.route("/", methods=["POST"])
+@products_bp.route("/", methods=["POST"], strict_slashes=False)
 @token_required
 @admin_required
 def add_product(user):

@@ -123,7 +123,7 @@ export default function AdminProductsPage() {
     try {
       setLoading(true);
       const token = getToken();
-      const res = await fetch(`${baseURL}/products`, {
+      const res = await fetch(`${baseURL}/products/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
