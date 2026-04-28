@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
+import { formatCurrency } from "@/lib/format";
 
 export interface ProductInput {
   id?: string | number;
@@ -44,26 +45,26 @@ const ProductCard = (props: ProductInput) => {
       </h2>
 
       {category && (
-        <p className="text-xs text-center text-blue-600 mb-1 font-semibold uppercase tracking-wider">
+        <p className="text-xs text-center text-blue-600 dark:text-blue-400 mb-1 font-semibold uppercase tracking-wider">
           {category}
         </p>
       )}
 
       {description && (
-        <p className="text-slate-600 text-sm text-center mb-3 line-clamp-2">
+        <p className="text-sm text-center mb-3 line-clamp-2 text-muted-foreground">
           {description}
         </p>
       )}
 
       <div className="flex justify-between items-center mt-4 gap-2">
-        <span className="text-lg font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-lg">
-          ${price.toFixed(2)}
+        <span className="text-lg font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-3 py-1 rounded-lg">
+          {formatCurrency(price)}
         </span>
         <span
           className={`text-sm font-semibold px-3 py-1 rounded-lg ${
-            stock > 0 
-              ? "text-green-700 bg-green-50" 
-              : "text-red-700 bg-red-50"
+            stock > 0
+              ? "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/50"
+              : "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/50"
           }`}
         >
           {stock > 0 ? `${stock} Left` : "Out"}

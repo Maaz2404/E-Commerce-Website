@@ -122,7 +122,11 @@ def add_product(user):
         cur.close()
         conn.close()
 
-        return jsonify(dict(zip(col_names, new_product))), 201
+        product_dict = dict(zip(col_names, new_product))
+        # psycopg2 returns Decimal for NUMERIC columns; convert to JSON-safe types
+        product_dict["price"] = float(product_dict["price"])
+        product_dict["stock"] = int(product_dict["stock"])
+        return jsonify(product_dict), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

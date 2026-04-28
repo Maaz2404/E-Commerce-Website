@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
 import { JwtPayload } from "@/components/NavBar";
 import { useCartStore } from "@/store/cartStore";
+import { formatCurrency } from "@/lib/format";
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -84,21 +85,21 @@ export default function CartPage() {
 
   if (!cart) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-blue-50 to-slate-50">
-        <p className="text-slate-600 text-lg">Loading your cart...</p>
+      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-blue-50 to-slate-50 dark:from-slate-950 dark:to-slate-900">
+        <p className="text-slate-600 dark:text-slate-300 text-lg">Loading your cart...</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="max-w-4xl mx-auto mt-20 p-6 bg-white shadow-xl rounded-xl border border-blue-200 mb-8">
-        <h1 className="text-3xl font-bold mb-6 text-center text-slate-900">
+      <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-blue-200 dark:border-slate-700 mb-8">
+        <h1 className="text-3xl font-bold mb-6 text-center text-slate-900 dark:text-slate-50">
           Your Cart
         </h1>
 
         {cart.items.length === 0 ? (
-          <p className="text-center text-slate-500 text-lg">
+          <p className="text-center text-slate-500 dark:text-slate-400 text-lg">
             Your cart is empty 🛒
           </p>
         ) : (
@@ -106,21 +107,21 @@ export default function CartPage() {
             {cart.items.map((item) => (
               <div
                 key={item.item_id}
-                className="flex justify-between items-center border-b border-slate-200 pb-4 hover:bg-slate-50 transition rounded-lg px-4 py-2"
+                className="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition rounded-lg px-4 py-2"
               >
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
                     {item.product_name}
                   </h2>
-                  <p className="text-slate-600">
-                    Price: <span className="font-medium text-blue-600">${item.price}</span>
+                  <p className="text-slate-600 dark:text-slate-300">
+                    Price: <span className="font-medium text-blue-600 dark:text-blue-400">{formatCurrency(item.price)}</span>
                   </p>
-                  <p className="text-slate-600">
+                  <p className="text-slate-600 dark:text-slate-300">
                     Quantity:{" "}
                     <span className="font-medium">{item.quantity}</span>
                   </p>
-                  <p className="text-slate-900 font-semibold">
-                    Total: ${item.total.toFixed(2)}
+                  <p className="text-slate-900 dark:text-slate-50 font-semibold">
+                    Total: {formatCurrency(item.total)}
                   </p>
                 </div>
 
@@ -138,10 +139,10 @@ export default function CartPage() {
               </div>
             ))}
 
-            <div className="border-t border-slate-200 pt-4 flex justify-between items-center bg-slate-50 rounded-lg px-4 py-3">
-              <h2 className="text-xl font-bold text-slate-900">Total:</h2>
-              <p className="text-2xl font-bold text-blue-600">
-                ${cart.total_price.toFixed(2)}
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-4 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 rounded-lg px-4 py-3">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">Total:</h2>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {formatCurrency(cart.total_price)}
               </p>
             </div>
           </div>
@@ -150,7 +151,9 @@ export default function CartPage() {
         {message && (
           <p
             className={`mt-4 text-center font-medium p-3 rounded-lg ${
-              message.startsWith("✅") ? "text-green-700 bg-green-50" : "text-red-700 bg-red-50"
+              message.startsWith("✅")
+                ? "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40"
+                : "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40"
             }`}
           >
             {message}

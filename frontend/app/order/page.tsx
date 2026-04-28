@@ -6,6 +6,7 @@ import { jwtDecode } from "jwt-decode";
 import { JwtPayload } from "@/components/NavBar";
 import { useCartStore } from "@/store/cartStore";
 import { useCouponStore, Coupon } from "@/store/couponStore";
+import { formatCurrency } from "@/lib/format";
 
 type PaymentMethod = {
   id: number;
@@ -169,7 +170,7 @@ export default function OrderPage() {
   discountValue = Math.min(discountValue, total);
 
   setDiscount(discountValue);
-  setMessage({ type: "success", text: `Coupon applied: -$${discountValue.toFixed(2)}` });
+  setMessage({ type: "success", text: `Coupon applied: -${formatCurrency(discountValue)}` });
 };
 
 
@@ -181,7 +182,7 @@ export default function OrderPage() {
 
     const sel = methods.find((m) => m.id === selectedMethodId);
     if (sel && sel.balance < total - discount) {
-      setMessage({ type: "error", text: `Insufficient balance (balance: $${sel.balance.toFixed(2)})` });
+      setMessage({ type: "error", text: `Insufficient balance (balance: ${formatCurrency(sel.balance)})` });
       return;
     }
 
@@ -211,17 +212,19 @@ export default function OrderPage() {
     }
   };
 
-  const formattedTotal = useMemo(() => `$${(total - discount).toFixed(2)}`, [total, discount]);
+  const formattedTotal = useMemo(() => formatCurrency(total - discount), [total, discount]);
 
   return (
-    <div className="max-w-4xl mx-auto mt-20 p-6 bg-white shadow-md rounded-lg text-black">
+    <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-slate-900 shadow-md rounded-lg text-slate-900 dark:text-slate-50">
       <h1 className="text-3xl font-bold mb-6 text-center">Order Summary</h1>
 
       {/* message */}
       {message && (
         <div
           className={`mb-4 text-center px-4 py-2 rounded ${
-            message.type === "error" ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"
+            message.type === "error"
+              ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400"
+              : "bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400"
           }`}
         >
           {message.text}
@@ -231,26 +234,26 @@ export default function OrderPage() {
       {/* items */}
       <div className="space-y-4">
         {items.length === 0 ? (
-          <p className="text-center text-gray-500">No items in your cart.</p>
+          <p className="text-center text-slate-500 dark:text-slate-400">No items in your cart.</p>
         ) : (
           <>
             <div className="space-y-3">
               {items.map((item) => (
-                <div key={item.item_id} className="flex justify-between items-center border-b border-gray-200 pb-4">
+                <div key={item.item_id} className="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-4">
                   <div>
                     <p className="font-semibold">{item.product_name}</p>
-                    <p className="text-sm text-gray-500">
-                      Qty: {item.quantity} • Price: ${item.price}
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Qty: {item.quantity} • Price: {formatCurrency(item.price)}
                     </p>
                   </div>
-                  <div className="font-semibold">${item.total.toFixed(2)}</div>
+                  <div className="font-semibold">{formatCurrency(item.total)}</div>
                 </div>
               ))}
             </div>
 
-            <div className="border-t border-gray-300 pt-4 flex justify-between items-center">
+            <div className="border-t border-slate-300 dark:border-slate-700 pt-4 flex justify-between items-center">
               <h2 className="text-xl font-bold">Grand Total:</h2>
-              <p className="text-2xl font-bold text-green-600">{formattedTotal}</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formattedTotal}</p>
             </div>
           </>
         )}
@@ -258,13 +261,13 @@ export default function OrderPage() {
 
       {/* payment method selector + add */}
       <div className="mt-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Payment method</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Payment method</label>
         <div className="flex gap-3 items-center">
           <select
             value={selectedMethodId ?? ""}
             onChange={(e) => setSelectedMethodId(e.target.value ? Number(e.target.value) : null)}
             disabled={loadingMethods || methods.length === 0}
-            className="border rounded px-3 py-2 w-full max-w-md"
+            className="border border-slate-300 dark:border-slate-600 rounded px-3 py-2 w-full max-w-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50"
           >
             {loadingMethods ? (
               <option>Loading methods...</option>
@@ -275,7 +278,7 @@ export default function OrderPage() {
                 <option value="">-- select method --</option>
                 {methods.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.method_type} • ${m.balance.toFixed(2)}
+                    {m.method_type} • {formatCurrency(m.balance)}
                   </option>
                 ))}
               </>
@@ -292,7 +295,7 @@ export default function OrderPage() {
           <button
             type="button"
             onClick={fetchMethods}
-            className="border px-3 py-2 rounded hover:bg-gray-50"
+            className="border border-slate-300 dark:border-slate-600 px-3 py-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
             disabled={loadingMethods}
             title="Refresh methods"
           >
@@ -303,21 +306,21 @@ export default function OrderPage() {
 
       {/* coupon */}
       <div className="mt-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Coupon (optional)</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Coupon (optional)</label>
         <div className="flex gap-3 items-center">
           <input
             value={coupon}
             onChange={(e) => {
               setCoupon(e.target.value);
-              setDiscount(0); // reset discount when editing
+              setDiscount(0);
             }}
             placeholder="Enter coupon code"
-            className="border rounded px-3 py-2 w-full max-w-sm"
+            className="border border-slate-300 dark:border-slate-600 rounded px-3 py-2 w-full max-w-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50"
           />
           <button
             type="button"
             onClick={handleApplyCoupon}
-            className="border px-3 py-2 rounded hover:bg-gray-50"
+            className="border border-slate-300 dark:border-slate-600 px-3 py-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             Apply
           </button>
@@ -330,7 +333,7 @@ export default function OrderPage() {
           onClick={handleConfirmPayment}
           disabled={loadingPay}
           className={`px-8 py-3 rounded-lg text-xl font-semibold text-white ${
-            loadingPay ? "bg-gray-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"
+            loadingPay ? "bg-slate-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"
           }`}
         >
           {loadingPay ? "Processing..." : `Pay ${formattedTotal}`}
@@ -340,29 +343,29 @@ export default function OrderPage() {
       {/* Add method modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">Add Payment Method</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6 w-full max-w-md border border-slate-200 dark:border-slate-700">
+            <h3 className="text-xl font-semibold mb-4 text-slate-900 dark:text-slate-50">Add Payment Method</h3>
             <form onSubmit={handleAddMethod} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Type</label>
                 <select
                   value={newMethodType}
                   onChange={(e) => setNewMethodType(e.target.value as "wallet" | "card")}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border border-slate-300 dark:border-slate-600 rounded px-3 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50"
                 >
                   <option value="wallet">Wallet</option>
                   <option value="card">Card</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Initial balance (optional)</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Initial balance (optional)</label>
                 <input
                   type="number"
                   min={0}
                   step="0.01"
                   value={newMethodBalance}
                   onChange={(e) => setNewMethodBalance(e.target.value === "" ? "" : Number(e.target.value))}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border border-slate-300 dark:border-slate-600 rounded px-3 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50"
                   placeholder="0.00"
                 />
               </div>
@@ -373,7 +376,7 @@ export default function OrderPage() {
                     setShowAddModal(false);
                     setNewMethodBalance("");
                   }}
-                  className="px-4 py-2 rounded border"
+                  className="px-4 py-2 rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   Cancel
                 </button>

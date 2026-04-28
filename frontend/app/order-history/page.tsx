@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatCurrency } from "@/lib/format";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
@@ -57,8 +58,8 @@ export default function OrderHistoryPage() {
       if (!res.ok) {
         alert(data.error || "Refund failed.");
       } else {
-        alert(`Refunded: $${data.refund_amount}`);
-        fetchOrders(); // refresh list
+        alert(`Refunded: ${formatCurrency(data.refund_amount)}`);
+        fetchOrders();
       }
     } catch (err) {
       console.error(err);
@@ -73,10 +74,10 @@ export default function OrderHistoryPage() {
 
   return (
     <div className="p-6 w-full max-w-full mt-2">
-      <h1 className="text-3xl font-bold mb-4">Order History</h1>
+      <h1 className="text-3xl font-bold mb-4 text-slate-900 dark:text-slate-50">Order History</h1>
 
       <div className="flex items-center mb-4 gap-4">
-        <label className="flex items-center gap-2 text-gray-700">
+        <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
           <input
             type="checkbox"
             checked={showPaidOnly}
@@ -94,63 +95,60 @@ export default function OrderHistoryPage() {
       </div>
 
       {loading ? (
-        <p>Loading orders...</p>
+        <p className="text-slate-600 dark:text-slate-300">Loading orders...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-300">
+        <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+          <table className="min-w-full">
             <thead>
-              <tr className="bg-gray-100">
-                <th className="p-3 border">Order ID</th>
-                <th className="p-3 border">Total ($)</th>
-                <th className="p-3 border">Status</th>
-                <th className="p-3 border">Created At</th>
-                
-                <th className="p-3 border">Action</th>
+              <tr className="bg-slate-100 dark:bg-slate-800">
+                <th className="p-3 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">Order ID</th>
+                <th className="p-3 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">Total</th>
+                <th className="p-3 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">Status</th>
+                <th className="p-3 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">Created At</th>
+                <th className="p-3 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200">Action</th>
               </tr>
             </thead>
             <tbody>
               {filteredOrders.map((o) => (
-                <tr key={o.id} className="border">
-                  <td className="p-3 border">{o.id}</td>
-                  <td className="p-3 border">{o.total_amount.toFixed(2)}</td>
+                <tr key={o.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                  <td className="p-3 text-slate-800 dark:text-slate-200">{o.id}</td>
+                  <td className="p-3 font-medium text-slate-800 dark:text-slate-200">{formatCurrency(o.total_amount)}</td>
                   <td
-                    className={`p-3 border capitalize font-semibold ${
+                    className={`p-3 capitalize font-semibold ${
                       o.status === "paid"
-                        ? "text-green-600"
+                        ? "text-green-600 dark:text-green-400"
                         : o.status === "refunded"
-                        ? "text-red-500"
-                        : "text-gray-700"
+                        ? "text-red-500 dark:text-red-400"
+                        : "text-slate-700 dark:text-slate-300"
                     }`}
                   >
                     {o.status}
                   </td>
-                  <td className="p-3 border">
+                  <td className="p-3 text-slate-600 dark:text-slate-400">
                     {new Date(o.created_at).toLocaleString()}
                   </td>
-                
-                  <td className="p-3 border text-center">
+                  <td className="p-3 text-center">
                     {o.status === "paid" || o.status === "delivered" ? (
                       <button
                         onClick={() => handleRefund(o.id)}
-                        disabled={o.status !== "paid"}
+                        disabled={processingRefund === o.id || o.status !== "paid"}
                         className={`px-3 py-1 rounded text-white ${
-                            o.status === "paid"
+                          o.status === "paid" && processingRefund !== o.id
                             ? "bg-orange-500 hover:bg-orange-600"
-                            : "bg-gray-300 cursor-not-allowed"
+                            : "bg-slate-300 dark:bg-slate-600 cursor-not-allowed"
                         }`}
-                        >
-                        Refund
-                        </button>
-
+                      >
+                        {processingRefund === o.id ? "Processing..." : "Refund"}
+                      </button>
                     ) : (
-                      <span className="text-gray-300">—</span>
+                      <span className="text-slate-300 dark:text-slate-600">—</span>
                     )}
                   </td>
                 </tr>
               ))}
               {filteredOrders.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-4 text-center text-gray-500">
+                  <td colSpan={5} className="p-4 text-center text-slate-500 dark:text-slate-400">
                     No orders found.
                   </td>
                 </tr>
