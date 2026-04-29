@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatCurrency } from "@/lib/format";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -122,7 +123,7 @@ export default function OrdersPage() {
                 <tr key={order.id} className="border">
                   <td className="p-3 border">{order.id}</td>
                   <td className="p-3 border">{order.username}</td>
-                  <td className="p-3 border">${order.total_amount}</td>
+                  <td className="p-3 border">{formatCurrency(order.total_amount)}</td>
 
                   {/* STATUS DROPDOWN */}
                   <td className="p-3 border">

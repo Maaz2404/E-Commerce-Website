@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatCurrency } from "@/lib/format";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
@@ -354,8 +355,9 @@ export default function CouponsPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600 font-medium text-sm">Discount</span>
                   <span className="text-lg font-bold text-orange-600">
-                    {c.discount_value}
-                    {c.discount_type === "percent" ? "%" : " ₹"}
+                    {c.discount_type === "percent"
+                      ? `${c.discount_value}%`
+                      : formatCurrency(c.discount_value)}
                   </span>
                 </div>
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { jwtDecode, JwtPayload } from "jwt-decode";
+import { formatCurrency } from "@/lib/format";
 
 interface MyJwtPayload extends JwtPayload {
   username: string;
@@ -72,7 +73,7 @@ export default function AdminPage() {
         <DashboardCard title="Total Users" value={stats.users.total} accent="bg-blue-500" />
         <DashboardCard title="Admins" value={stats.users.admins} accent="bg-slate-900" />
         <DashboardCard title="Total Orders" value={stats.orders.total_orders} accent="bg-green-500" />
-        <DashboardCard title="Revenue (All Time)" value={`$${stats.orders.total_revenue}`} accent="bg-blue-700" />
+        <DashboardCard title="Revenue (All Time)" value={formatCurrency(stats.orders.total_revenue)} accent="bg-blue-700" />
       </div>
 
       {/* SECOND ROW */}

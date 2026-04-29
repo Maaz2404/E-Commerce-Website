@@ -346,7 +346,7 @@ export default function AdminProductsPage() {
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-sm font-medium text-muted-foreground block mb-1">Price (Rs) *</label>
+                <label className="text-sm font-medium text-muted-foreground block mb-1">Price (PKR) *</label>
                 <input name="price" type="number" min="0" step="0.01" value={newProduct.price} onChange={handleNewChange} placeholder="0.00" className={inputCls} />
               </div>
               <div>
