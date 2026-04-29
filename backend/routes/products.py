@@ -31,9 +31,6 @@ def get_all_products():
         cur.execute(query, params)
         rows = cur.fetchall()
 
-        if not rows:
-            return jsonify({"message": "No products found"}), 404
-
         products = []
         for row in rows:
             products.append({

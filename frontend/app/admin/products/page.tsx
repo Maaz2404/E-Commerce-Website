@@ -37,9 +37,27 @@ export default function AdminProductsPage() {
   }, []);
 
   async function loadProducts() {
-    const res = await fetch(`${baseURL}/products/`);
-    const productsData = await res.json();
-    setProducts(productsData.products);
+    try {
+      const res = await fetch(`${baseURL}/products/`);
+      const productsData = await res.json();
+
+      // Handle 404 (no products) gracefully
+      if (res.status === 404) {
+        setProducts([]);
+        return;
+      }
+
+      if (!res.ok) {
+        console.error("Failed to load products:", productsData);
+        setProducts([]);
+        return;
+      }
+
+      setProducts(productsData.products || []);
+    } catch (err) {
+      console.error("Error loading products:", err);
+      setProducts([]);
+    }
   }
 
   const getToken = () => localStorage.getItem("token");
@@ -144,6 +162,17 @@ export default function AdminProductsPage() {
     try {
       setLoading(true);
       const token = getToken();
+
+      console.log("🚀 Sending POST request to:", `${baseURL}/products/`);
+      console.log("📦 Request body:", {
+        name: newProduct.name.trim(),
+        description: newProduct.description.trim(),
+        price: parsedPrice,
+        stock: parseInt(newProduct.stock || "0", 10),
+        category: newProduct.category.trim(),
+        image_url: newProduct.image_url.trim(),
+      });
+
       const res = await fetch(`${baseURL}/products/`, {
         method: "POST",
         headers: {
@@ -160,20 +189,30 @@ export default function AdminProductsPage() {
         }),
       });
 
+      console.log("📡 Response status:", res.status, res.statusText);
+      console.log("✅ Response ok?", res.ok);
+
       const result = await res.json();
+      console.log("📥 Response data:", result);
+
       if (!res.ok) {
+        console.error("❌ Request failed:", result.error || "Failed to add product");
         addToast("error", result.error || "Failed to add product");
         return;
       }
 
+      console.log("✅ Product added successfully, updating state...");
       setProducts((prev) => (prev ? [result, ...prev] : [result]));
       setNewProduct({ name: "", description: "", price: "", stock: "", category: "", image_url: "" });
       addToast("success", `"${result.name}" added successfully!`);
     } catch (err) {
-      console.error("Failed to add product:", err);
+      console.error("💥 Exception caught in handleAddProduct:", err);
+      console.error("Error name:", err instanceof Error ? err.name : 'unknown');
+      console.error("Error message:", err instanceof Error ? err.message : err);
       addToast("error", "Network error while adding product.");
     } finally {
       setLoading(false);
+      console.log("🏁 handleAddProduct completed");
     }
   };
 
