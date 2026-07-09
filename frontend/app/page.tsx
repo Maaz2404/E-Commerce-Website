@@ -1,20 +1,13 @@
 "use client";
 
 import ProductCard, { ProductInput } from "@/components/ProductCard";
+import ChatWidget from "@/components/ChatWidget";
 import { useCouponStore, Coupon } from "@/store/couponStore";
 import { formatCurrency } from "@/lib/format";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-type SupportMessage = {
-  id: number;
-  sender_type: "user" | "admin";
-  message: string;
-  is_read: boolean;
-  created_at: string;
-};
 
 function HomePageContent() {
   const [products, setProducts] = useState<ProductInput[]>([]);
@@ -22,14 +15,7 @@ function HomePageContent() {
   const searchParams = useSearchParams();
 
   const [showCoupons, setShowCoupons] = useState(true);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatLoading, setChatLoading] = useState(false);
-  const [chatMessages, setChatMessages] = useState<SupportMessage[]>([]);
-  const [chatError, setChatError] = useState<string | null>(null);
-  const [messageInput, setMessageInput] = useState("");
-  const [sending, setSending] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const messagesRef = useRef<HTMLDivElement | null>(null);
 
   const categories = ["All", "Bakery", "Beverages", "Snacks", "Dairy"];
   const searchQuery = (searchParams.get("search") ?? "").trim().toLowerCase();
@@ -63,149 +49,6 @@ function HomePageContent() {
 
     return matchesCategory && matchesSearch;
   });
-
-  const getToken = () => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("token");
-  };
-
-  const scrollToBottom = () => {
-    if (!messagesRef.current) return;
-    messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
-  };
-
-  const loadMessages = async (token?: string | null) => {
-    const authToken = token ?? getToken();
-    if (!authToken) {
-      setChatMessages([]);
-      return;
-    }
-
-    setChatLoading(true);
-    setChatError(null);
-
-    try {
-      const res = await fetch(`${baseURL}/support/messages`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        throw new Error(json?.error ?? `Failed to fetch messages (${res.status})`);
-      }
-
-      const json = await res.json();
-      const messages: SupportMessage[] = (json?.messages ?? []).map((message: any) => ({
-        id: message.id,
-        sender_type: message.sender_type,
-        message: message.message,
-        is_read: !!message.is_read,
-        created_at: message.created_at,
-      }));
-
-      setChatMessages(messages);
-      setTimeout(() => scrollToBottom(), 50);
-    } catch (error: any) {
-      console.error("loadMessages error:", error);
-      setChatError(error?.message ?? "Failed to load messages");
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
-  const openChat = async () => {
-    setChatError(null);
-    const token = getToken();
-
-    setChatOpen(true);
-    if (!token) {
-      setChatMessages([]);
-      return;
-    }
-
-    await loadMessages(token);
-  };
-
-  const closeChat = () => {
-    setChatOpen(false);
-    setChatError(null);
-  };
-
-  const sendMessage = async () => {
-    if (messageInput.trim() === "") return;
-
-    const token = getToken();
-    if (!token) {
-      setChatError("You must be logged in to send messages.");
-      return;
-    }
-
-    const tempId = Date.now() * -1;
-    const optimisticMessage: SupportMessage = {
-      id: tempId,
-      sender_type: "user",
-      message: messageInput,
-      is_read: true,
-      created_at: new Date().toISOString(),
-    };
-
-    setChatMessages((prev) => [...prev, optimisticMessage]);
-    setMessageInput("");
-    setSending(true);
-    setChatError(null);
-    setTimeout(() => scrollToBottom(), 10);
-
-    try {
-      const res = await fetch(`${baseURL}/support/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ message: optimisticMessage.message }),
-      });
-
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json?.error ?? `Send failed (${res.status})`);
-      }
-
-      const returned = json?.data;
-      if (returned) {
-        setChatMessages((prev) =>
-          prev.map((message) =>
-            message.id === tempId
-              ? {
-                  id: returned.id,
-                  sender_type: returned.sender_type,
-                  message: returned.message,
-                  is_read: !!returned.is_read,
-                  created_at: returned.created_at,
-                }
-              : message
-          )
-        );
-      }
-    } catch (error: any) {
-      console.error("sendMessage error:", error);
-      setChatMessages((prev) => prev.filter((message) => message.id !== tempId));
-      setChatError(error?.message ?? "Failed to send message");
-    } finally {
-      setSending(false);
-      setTimeout(() => scrollToBottom(), 50);
-    }
-  };
-
-  const onInputKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      sendMessage();
-    }
-  };
 
   return (
     <div className="px-4 pb-10 pt-6 md:px-6">
@@ -329,128 +172,7 @@ function HomePageContent() {
         )}
       </div>
 
-      <div className="fixed bottom-5 right-5 z-50">
-        {!chatOpen && (
-          <button
-            onClick={openChat}
-            className="flex items-center gap-2 rounded-full bg-gradient-to-r from-slate-950 to-sky-800 px-4 py-3 text-white shadow-lg transition hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-amber-300"
-            title="Support"
-          >
-            <span className="text-xl">💬</span>
-            <span className="font-medium">Need help?</span>
-          </button>
-        )}
-
-        {chatOpen && (
-          <div className="flex h-96 w-80 flex-col overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 md:w-96">
-            <div className="flex items-center justify-between bg-gradient-to-r from-slate-950 to-sky-800 px-4 py-3 text-white">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 font-semibold">
-                  ?
-                </div>
-                <div>
-                  <div className="font-semibold">Support</div>
-                  <div className="text-xs opacity-90">Call 03122417654 or chat here</div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    const token = getToken();
-                    if (token) loadMessages(token);
-                  }}
-                  className="rounded px-2 py-1 text-sm bg-white/20"
-                  title="Refresh"
-                >
-                  Refresh
-                </button>
-                <button onClick={closeChat} className="px-2 text-xl font-bold" aria-label="Close support chat">
-                  ×
-                </button>
-              </div>
-            </div>
-
-            <div
-              ref={messagesRef}
-              className="flex-1 space-y-3 overflow-auto bg-gradient-to-br from-sky-50 to-slate-50 px-3 py-3 dark:from-slate-950 dark:to-slate-900"
-            >
-              {chatLoading && (
-                <div className="text-center text-sm text-gray-500 dark:text-slate-400">Loading messages...</div>
-              )}
-
-              {!chatLoading && !getToken() && (
-                <div className="text-center text-sm text-gray-600 dark:text-slate-300">
-                  You must be logged in to view and send messages.
-                </div>
-              )}
-
-              {!chatLoading && getToken() && chatMessages.length === 0 && (
-                <div className="text-center text-sm text-gray-600 dark:text-slate-300">
-                  No messages yet. Send the first message and our team will reply soon.
-                </div>
-              )}
-
-              {!chatLoading && getToken() && chatMessages.length > 0 && (
-                <div className="space-y-2">
-                  {chatMessages.map((message) => {
-                    const isUser = message.sender_type === "user";
-
-                    return (
-                      <div
-                        key={message.id}
-                        className={`flex ${isUser ? "justify-end" : "justify-start"}`}
-                      >
-                        <div
-                          className={`max-w-[75%] break-words rounded-lg px-3 py-2 text-sm ${
-                            isUser
-                              ? "rounded-br-none bg-gradient-to-r from-slate-950 to-sky-800 text-white"
-                              : "rounded-bl-none border border-sky-100 bg-white text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                          }`}
-                        >
-                          <div className="whitespace-pre-wrap">{message.message}</div>
-                          <div className={`mt-1 text-xs ${isUser ? "text-white/70" : "text-slate-500"}`}>
-                            {new Date(message.created_at).toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {chatError && <div className="text-center text-sm text-red-500">{chatError}</div>}
-            </div>
-
-            <div className="border-t border-sky-100 bg-white px-3 py-3 dark:border-slate-700 dark:bg-slate-900">
-              {!getToken() ? (
-                <div className="flex flex-col gap-2">
-                  <div className="text-sm text-slate-700 dark:text-slate-200">Log in to chat with support.</div>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <textarea
-                    value={messageInput}
-                    onChange={(event) => setMessageInput(event.target.value)}
-                    onKeyDown={onInputKeyDown}
-                    placeholder="Write a message... (Enter to send)"
-                    className="h-12 flex-1 resize-none rounded-lg border border-sky-200 p-2 focus:ring-2 focus:ring-amber-400 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                  />
-                  <button
-                    onClick={sendMessage}
-                    disabled={sending || messageInput.trim() === ""}
-                    className={`rounded-lg px-4 transition ${
-                      sending ? "bg-slate-400 text-white" : "bg-amber-400 text-slate-950 hover:bg-amber-300"
-                    }`}
-                  >
-                    Send
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+      <ChatWidget />
     </div>
   );
 }

@@ -11,6 +11,7 @@ from routes.coupons import coupons_bp
 from routes.reviews import reviews_bp
 from routes.support import support_bp
 from routes.stats import stats_bp
+from routes.chat import chat_bp
 
 
 
@@ -20,7 +21,6 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-print("SECRET_KEY:", os.getenv("SECRET_KEY"))
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
@@ -59,10 +59,11 @@ app.register_blueprint(coupons_bp,url_prefix="/coupons")
 app.register_blueprint(reviews_bp,url_prefix="/reviews")
 app.register_blueprint(support_bp,url_prefix="/support")
 app.register_blueprint(stats_bp, url_prefix="/stats")
+app.register_blueprint(chat_bp, url_prefix="/chat")
 
 @app.route("/")
 def home():
     return {"msg": "Flask + DB schema ready"}
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)

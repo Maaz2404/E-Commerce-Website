@@ -3,3 +3,4 @@ routes/__pycache__/
 *.pyc
 *.pyo
 .vscode
+.env
