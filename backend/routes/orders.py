@@ -94,6 +94,31 @@ def get_order_details(user, order_id):
         return jsonify({"error": str(e)}), 500
 
 
+# 3️⃣.5 Get Payments for one of the user's orders (read-only) — Phase 1
+# Lets the Payment agent surface duplicate charges (story 11).
+@orders_bp.route("/<int:order_id>/payments", methods=["GET"])
+@token_required
+def get_order_payments(user, order_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        # ownership check first
+        cur.execute("SELECT id FROM orders WHERE id = %s AND user_id = %s",
+                    (order_id, user["id"]))
+        if not cur.fetchone():
+            return jsonify({"error": "Order not found"}), 404
+        cur.execute("""
+            SELECT id, order_id, amount, status, created_at, payment_method_id
+            FROM payments
+            WHERE order_id = %s
+            ORDER BY created_at
+        """, (order_id,))
+        return jsonify({"payments": cur.fetchall()}), 200
+    finally:
+        cur.close()
+        conn.close()
+
+
 # 4️⃣ Update Order Status (Admin Only)
 @orders_bp.route("/<int:order_id>/status", methods=["PATCH"])
 @token_required

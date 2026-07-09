@@ -1,13 +1,14 @@
 """Offline KB ingestion for the RAG knowledge base.
 
 Reads .md/.txt files under a KB directory, chunks them, embeds each chunk with
-`gemini-embedding-001` (768-dim, matching the vector(768) migration), and upserts
-into `kb_documents`. Re-runnable and idempotent: dedupes by (source, chunk_hash).
+OpenAI `text-embedding-3-small` (1536-dim, matching the vector(1536) migration),
+and upserts into `kb_documents`. Re-runnable and idempotent: dedupes by
+(source, chunk_hash).
 
 Usage:
     uv run python ingest_kb.py [kb_dir]   # default kb_dir = "kb"
 
-Requires GOOGLE_API_KEY in the environment / .env.
+Requires OPENAI_API_KEY in the environment / .env.
 """
 import os
 import sys
@@ -17,19 +18,20 @@ import hashlib
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
 from dotenv import load_dotenv
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from database import get_connection
 
 load_dotenv()
 
-EMBED_DIM = 768  # MUST match vector(768) in the migration and the query-embed call.
+EMBED_MODEL = "text-embedding-3-small"
+EMBED_DIM = 1536  # MUST match vector(1536) in migration 0004 and the query-embed call.
 _embedder = None
 
 
 def _get_embedder():
     global _embedder
     if _embedder is None:
-        _embedder = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+        _embedder = OpenAIEmbeddings(model=EMBED_MODEL)
     return _embedder
 
 
@@ -50,7 +52,7 @@ def ingest_file(path: str):
     if not chunks:
         print(f"{source}: no content, skipped")
         return
-    vectors = _get_embedder().embed_documents(chunks, output_dimensionality=EMBED_DIM)
+    vectors = _get_embedder().embed_documents(chunks)
     conn = get_connection()
     cur = conn.cursor()
     inserted = 0

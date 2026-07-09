@@ -258,6 +258,31 @@ def make_payment(user):
 
 
 
+# 5️⃣.5 Get Payment Status (read-only, user-scoped) — Phase 1
+@payments_bp.route("/<int:payment_id>/status", methods=["GET"])
+@token_required
+def get_payment_status(user, payment_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        # scope to the caller by joining through orders.user_id — a payment on
+        # someone else's order must 404, not leak.
+        cur.execute("""
+            SELECT p.id, p.order_id, p.amount, p.status, p.created_at,
+                   p.payment_method_id
+            FROM payments p
+            JOIN orders o ON o.id = p.order_id
+            WHERE p.id = %s AND o.user_id = %s
+        """, (payment_id, user["id"]))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": "Payment not found"}), 404
+        return jsonify(row), 200
+    finally:
+        cur.close()
+        conn.close()
+
+
 # 6️⃣ Change Payment Status (Admin Only)
 @payments_bp.route("/<int:payment_id>/status", methods=["PATCH"])
 @token_required
