@@ -58,6 +58,29 @@ export default function OrderPage() {
     }
   }, [router]);
 
+  // Auto-provision a pre-funded dummy method (dev/test — no real gateway yet)
+  const provisionDummyMethod = async (): Promise<PaymentMethod | null> => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${baseURL}/payments/methods/dummy`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (!res.ok) return null;
+      const m: any = json?.method;
+      if (!m) return null;
+      return {
+        id: m[0] ?? m.id,
+        method_type: m[1] ?? m.method_type,
+        balance: Number(m[2] ?? m.balance ?? 0),
+        created_at: m[3] ?? m.created_at,
+      };
+    } catch {
+      return null;
+    }
+  };
+
   // Fetch payment methods
   const fetchMethods = async () => {
     setLoadingMethods(true);
@@ -78,13 +101,19 @@ export default function OrderPage() {
       }
 
       const fetched: any[] = json.methods ?? [];
-      const normalized: PaymentMethod[] = fetched.map((m) => ({
+      let normalized: PaymentMethod[] = fetched.map((m) => ({
         id: m[0] ?? m.id,
         method_type: m[1] ?? m.method_type,
         balance: Number(m[2] ?? m.balance ?? 0),
         created_at: m[3] ?? m.created_at,
         updated_at: m[4] ?? m.updated_at ?? null,
       }));
+
+      // No methods yet? Auto-provision a pre-funded dummy so checkout just works.
+      if (normalized.length === 0) {
+        const dummy = await provisionDummyMethod();
+        if (dummy) normalized = [dummy];
+      }
 
       setMethods(normalized);
       if (normalized.length > 0) setSelectedMethodId((prev) => prev ?? normalized[0].id);
@@ -278,7 +307,7 @@ export default function OrderPage() {
                 <option value="">-- select method --</option>
                 {methods.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.method_type} • {formatCurrency(m.balance)}
+                    {m.method_type === "dummy" ? "Dummy Payment (Test)" : m.method_type} • {formatCurrency(m.balance)}
                   </option>
                 ))}
               </>

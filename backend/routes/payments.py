@@ -44,6 +44,60 @@ def add_payment_method(user):
 
 
 
+# 1️⃣.5 Provision a dummy pre-funded test payment method (dev/test only)
+# Since there is no real payment gateway yet, this gives the user a wallet
+# with a large balance so any test checkout succeeds. Idempotent: if the user
+# already has a dummy method it is returned as-is instead of creating another.
+DUMMY_METHOD_TYPE = "dummy"
+DUMMY_METHOD_BALANCE = 1_000_000  # PKR — fits NUMERIC(10,2)
+
+
+@payments_bp.route("/methods/dummy", methods=["POST"])
+@token_required
+def add_dummy_payment_method(user):
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        # reuse an existing dummy method if present
+        cur.execute("""
+            SELECT id, method_type, balance, created_at
+            FROM payment_methods
+            WHERE user_id = %s AND method_type = %s
+            ORDER BY id
+            LIMIT 1
+        """, (user["id"], DUMMY_METHOD_TYPE))
+        existing = cur.fetchone()
+
+        if existing:
+            cur.close()
+            conn.close()
+            return jsonify({
+                "message": "Dummy payment method already exists",
+                "method": existing
+            }), 200
+
+        cur.execute("""
+            INSERT INTO payment_methods (user_id, method_type, balance)
+            VALUES (%s, %s, %s)
+            RETURNING id, method_type, balance, created_at
+        """, (user["id"], DUMMY_METHOD_TYPE, DUMMY_METHOD_BALANCE))
+
+        new_method = cur.fetchone()
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "message": "Dummy payment method added",
+            "method": new_method
+        }), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
 # 2️⃣ Get User Payment Methods
 @payments_bp.route("/methods", methods=["GET"])
 @token_required
