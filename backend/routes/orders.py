@@ -1,5 +1,4 @@
-# routes/orders.py
-
+from utils.place_order import create_order_for_user,validate_coupon
 from flask import Blueprint, request, jsonify
 from database import get_connection
 from auth_middleware import token_required, admin_required
@@ -12,68 +11,30 @@ orders_bp = Blueprint("orders", __name__)
 @token_required
 def create_order(user):
     try:
+        data = request.get_json() or {}
+        coupon_id = data.get("coupon_id")  # Optional coupon
         user_id = user["id"]
+
         conn = get_connection()
         cur = conn.cursor()
 
-        # Get user cart
-        cur.execute("SELECT id FROM carts WHERE user_id = %s", (user_id,))
-        cart = cur.fetchone()
-        if not cart:
-            return jsonify({"error": "Cart not found"}), 404
+        # Use helper to place order
+        order_info = create_order_for_user(user_id, cur, conn, coupon_id=coupon_id,validate_coupon_fn=validate_coupon)
 
-        cart_id = cart["id"]
-
-        # Get items from cart
-        cur.execute("""
-            SELECT ci.product_id, ci.quantity, p.price
-            FROM cart_items ci
-            JOIN products p ON ci.product_id = p.id
-            WHERE ci.cart_id = %s
-        """, (cart_id,))
-        items = cur.fetchall()
-
-        if not items:
-            return jsonify({"error": "Cart is empty"}), 400
-
-        # Calculate total
-        total_amount = sum(float(item["price"]) * item["quantity"] for item in items)
-
-        # Create order
-        cur.execute("""
-            INSERT INTO orders (user_id, total_amount)
-            VALUES (%s, %s)
-            RETURNING id, status, created_at
-        """, (user_id, total_amount))
-        order = cur.fetchone()
-        order_id = order["id"]
-
-        # Insert order items
-        for item in items:
-            cur.execute("""
-                INSERT INTO order_items (order_id, product_id, quantity, unit_price)
-                VALUES (%s, %s, %s, %s)
-            """, (order_id, item["product_id"], item["quantity"], float(item["price"])))
-
-        # Clear the user's cart
-        cur.execute("DELETE FROM cart_items WHERE cart_id = %s", (cart_id,))
         conn.commit()
-
         cur.close()
         conn.close()
 
         return jsonify({
             "message": "Order created successfully",
-            "order_id": order_id,
-            "status": order["status"],
-            "total_amount": total_amount,
-            "created_at": order["created_at"]
+            "order_id": order_info["order_id"],
+            "total_amount": order_info["total_amount"],
+            "items": order_info["items"]
         }), 201
 
     except Exception as e:
         conn.rollback()
         return jsonify({"error": str(e)}), 500
-
 
 # 2️⃣ Get All Orders for Logged-In User
 @orders_bp.route("/", methods=["GET"])
@@ -131,6 +92,99 @@ def get_order_details(user, order_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# 3️⃣.5 Get Payments for one of the user's orders (read-only) — Phase 1
+# Lets the Payment agent surface duplicate charges (story 11).
+@orders_bp.route("/<int:order_id>/payments", methods=["GET"])
+@token_required
+def get_order_payments(user, order_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        # ownership check first
+        cur.execute("SELECT id FROM orders WHERE id = %s AND user_id = %s",
+                    (order_id, user["id"]))
+        if not cur.fetchone():
+            return jsonify({"error": "Order not found"}), 404
+        cur.execute("""
+            SELECT id, order_id, amount, status, created_at, payment_method_id
+            FROM payments
+            WHERE order_id = %s
+            ORDER BY created_at
+        """, (order_id,))
+        return jsonify({"payments": cur.fetchall()}), 200
+    finally:
+        cur.close()
+        conn.close()
+
+
+# 3️⃣.6 Cancel one of the user's own orders (Phase 2) — pre-shipment only.
+@orders_bp.route("/<int:order_id>/cancel", methods=["POST"], strict_slashes=False)
+@token_required
+def cancel_order(user, order_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT status FROM orders WHERE id = %s AND user_id = %s",
+                    (order_id, user["id"]))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": "order not found"}), 404
+        if row["status"] not in ("pending", "paid"):        # pre-shipment only
+            return jsonify({"error": f"cannot cancel an order in status {row['status']}"}), 409
+        cur.execute("UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = %s",
+                    (order_id,))
+        conn.commit()
+        return jsonify({"id": order_id, "status": "cancelled"}), 200
+    finally:
+        cur.close()
+        conn.close()
+
+
+# 3️⃣.7 Modify one of the user's own orders (Phase 2) — only while pending/paid.
+# Demo-grade: allows editing simple mutable fields (status transitions the user
+# is permitted to make are limited; here we accept an optional shipping note via
+# a generic field set). Foreign / shipped orders are rejected.
+@orders_bp.route("/<int:order_id>", methods=["PATCH"], strict_slashes=False)
+@token_required
+def modify_order(user, order_id):
+    data = request.get_json() or {}
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT status FROM orders WHERE id = %s AND user_id = %s",
+                    (order_id, user["id"]))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": "order not found"}), 404
+        if row["status"] not in ("pending", "paid"):
+            return jsonify({"error": f"cannot modify an order in status {row['status']}"}), 409
+
+        # Only a small, safe set of fields is user-modifiable pre-shipment.
+        allowed = {"status": "status = %s"}
+        sets, values = [], []
+        for key, sql in allowed.items():
+            if key in data and data[key] is not None:
+                if key == "status" and data[key] not in ("pending", "paid", "cancelled"):
+                    return jsonify({"error": "invalid status transition"}), 400
+                sets.append(sql)
+                values.append(data[key])
+        if not sets:
+            return jsonify({"error": "no modifiable fields provided"}), 400
+
+        values.append(order_id)
+        cur.execute(
+            f"UPDATE orders SET {', '.join(sets)}, updated_at = NOW() "
+            f"WHERE id = %s RETURNING id, status, total_amount, updated_at",
+            tuple(values),
+        )
+        updated = cur.fetchone()
+        conn.commit()
+        return jsonify({"message": "Order modified", "order": updated}), 200
+    finally:
+        cur.close()
+        conn.close()
 
 
 # 4️⃣ Update Order Status (Admin Only)
@@ -196,4 +250,87 @@ def get_all_orders(user):
         return jsonify(orders), 200
 
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@orders_bp.route("/<int:order_id>/refund", methods=["POST"])
+@token_required
+def refund_order(user, order_id):
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+
+        # 1) Fetch order
+        cur.execute("""
+            SELECT id, user_id, total_amount, status
+            FROM orders
+            WHERE id = %s
+        """, (order_id,))
+        order = cur.fetchone()
+
+        if not order:
+            return jsonify({"error": "Order not found"}), 404
+
+        order_id, owner_id, total_amount, status = order
+
+        # 2) Check permission
+        is_admin = user.get("role") == "admin"
+
+        # User trying to refund someone else's order — block it
+        if not is_admin and owner_id != user["id"]:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        # User restrictions
+        if not is_admin:
+            # normal user can only refund if paid
+            if status not in ["paid", "delivered"]:
+                return jsonify({"error": "Order cannot be refunded in its current status"}), 400
+
+        # Prevent double refund
+        if status == "refunded":
+            return jsonify({"error": "Order already refunded"}), 400
+
+        # 3) Fetch payment method for user
+        cur.execute("""
+            SELECT id, balance
+            FROM payment_methods
+            WHERE user_id = %s
+            ORDER BY id ASC
+            LIMIT 1
+        """, (owner_id,))
+        payment_method = cur.fetchone()
+
+        if not payment_method:
+            return jsonify({"error": "User has no payment method to refund to"}), 400
+
+        pay_method_id, old_balance = payment_method
+
+        new_balance = old_balance + total_amount
+
+        # 4) Update payment method balance
+        cur.execute("""
+            UPDATE payment_methods
+            SET balance = %s
+            WHERE id = %s
+        """, (new_balance, pay_method_id))
+
+        # 5) Update order status
+        cur.execute("""
+            UPDATE orders
+            SET status = %s, updated_at = %s
+            WHERE id = %s
+        """, ("refunded", datetime.utcnow(), order_id))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "message": "Order refunded",
+            "refund_amount": total_amount,
+            "refunded_to_payment_method": pay_method_id,
+            "admin_override": is_admin
+        }), 200
+
+    except Exception as e:
+        conn.rollback()
         return jsonify({"error": str(e)}), 500

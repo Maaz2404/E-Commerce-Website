@@ -1,6 +1,8 @@
 from functools import wraps
 from flask import request, jsonify, current_app
 import jwt
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from database import get_connection
 
 
@@ -21,7 +23,7 @@ def token_required(f):
             user_id = data["user_id"]
 
             conn = get_connection()
-            cur = conn.cursor()
+            cur = conn.cursor(cursor_factory=RealDictCursor)
             cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
             user = cur.fetchone()
             cur.close()

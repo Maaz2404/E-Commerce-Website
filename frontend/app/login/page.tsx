@@ -1,5 +1,4 @@
 "use client";
-
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,15 +6,16 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
   FormLabel,
+  FormControl,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 
+// ✅ validation schema
 const formSchema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -46,12 +46,13 @@ export default function Login() {
 
       if (!res.ok) throw new Error(data?.message || "Login failed");
 
-      console.log("Logged in:", data);
+      console.log("✅ Logged in:", data);
       localStorage.setItem("token", data.token);
       window.dispatchEvent(new Event("authChange"));
       router.push("/");
+
     } catch (err: any) {
-      console.error("Error:", err.message);
+      console.error("❌ Error:", err.message);
       alert(err.message);
     } finally {
       setLoading(false);
@@ -59,13 +60,13 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_32%),linear-gradient(180deg,#071120_0%,#050b16_55%,#02040a_100%)] px-5 py-24">
-      <div className="w-full max-w-sm rounded-[1.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,19,38,0.94),rgba(4,8,16,0.98))] p-8 shadow-[0_25px_80px_rgba(2,6,23,0.45)]">
-        <h2 className="mb-2 text-center text-3xl font-semibold text-white">
-          Log In
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-slate-50">
+      <div className="bg-white shadow-xl rounded-xl p-8 w-full max-w-sm border border-blue-200">
+        <h2 className="text-3xl font-bold text-center mb-2 text-slate-900">
+          Welcome Back
         </h2>
-        <p className="mb-6 text-center text-sm text-slate-300">
-          Welcome back to the refreshed storefront.
+        <p className="text-center text-slate-600 mb-6 text-sm">
+          Log in to your account
         </p>
 
         <Form {...form}>
@@ -75,9 +76,14 @@ export default function Login() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="text-slate-700">Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter email" type="email" {...field} />
+                    <Input 
+                      placeholder="Enter your email" 
+                      type="email" 
+                      {...field} 
+                      className="focus:ring-blue-500 focus:border-blue-500"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -89,12 +95,13 @@ export default function Login() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel className="text-slate-700">Password</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter password"
+                      placeholder="Enter your password"
                       type="password"
                       {...field}
+                      className="focus:ring-blue-500 focus:border-blue-500"
                     />
                   </FormControl>
                   <FormMessage />
@@ -105,12 +112,19 @@ export default function Login() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full rounded-full bg-primary text-primary-foreground shadow-[0_14px_32px_rgba(37,99,235,0.35)] hover:bg-accent"
+              className="w-full bg-gradient-to-r from-slate-900 to-blue-900 hover:shadow-lg text-white"
             >
               {loading ? "Logging in..." : "Log In"}
             </Button>
           </form>
         </Form>
+
+        <p className="text-center text-slate-600 mt-6 text-sm">
+          Don't have an account?{" "}
+          <a href="/register" className="text-blue-600 hover:text-blue-700 font-semibold">
+            Sign up here
+          </a>
+        </p>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ from auth_middleware import token_required, admin_required
 
 products_bp = Blueprint("products", __name__)
 
-@products_bp.route("/", methods=["GET"])
+@products_bp.route("/", methods=["GET"],strict_slashes=False)
 def get_all_products():
     try:
         conn = get_connection()
@@ -30,9 +30,6 @@ def get_all_products():
         query += " ORDER BY id DESC"
         cur.execute(query, params)
         rows = cur.fetchall()
-
-        if not rows:
-            return jsonify({"message": "No products found"}), 404
 
         products = []
         for row in rows:
@@ -91,7 +88,7 @@ def get_product(product_id):
 
 # 🟢 Add a new product
 
-@products_bp.route("/", methods=["POST"])
+@products_bp.route("/", methods=["POST"], strict_slashes=False)
 @token_required
 @admin_required
 def add_product(user):
@@ -122,7 +119,11 @@ def add_product(user):
         cur.close()
         conn.close()
 
-        return jsonify(dict(zip(col_names, new_product))), 201
+        product_dict = dict(zip(col_names, new_product))
+        # psycopg2 returns Decimal for NUMERIC columns; convert to JSON-safe types
+        product_dict["price"] = float(product_dict["price"])
+        product_dict["stock"] = int(product_dict["stock"])
+        return jsonify(product_dict), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
