@@ -12,6 +12,9 @@ from routes.reviews import reviews_bp
 from routes.support import support_bp
 from routes.stats import stats_bp
 from routes.chat import chat_bp
+from routes.returns import returns_bp
+from routes.tickets import tickets_bp
+from routes.addresses import addresses_bp
 
 
 
@@ -50,6 +53,24 @@ CORS(
 init_db()
 print("✅ Tables ensured.")
 
+# Chatbot Phase 2: ensure the LangGraph Postgres checkpointer tables exist
+# (idempotent). These back the HITL interrupt()/resume pause-and-continue flow.
+def _setup_checkpointer():
+    import asyncio
+    from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+
+    async def _run():
+        async with AsyncPostgresSaver.from_conn_string(os.environ["DATABASE_URL"]) as saver:
+            await saver.setup()
+
+    asyncio.run(_run())
+
+try:
+    _setup_checkpointer()
+    print("✅ LangGraph checkpointer ready.")
+except Exception as e:
+    print(f"⚠️  Checkpointer setup skipped: {e}")
+
 app.register_blueprint(users_bp, url_prefix="/users")
 app.register_blueprint(products_bp, url_prefix="/products")
 app.register_blueprint(cart_bp,url_prefix="/carts")
@@ -60,6 +81,9 @@ app.register_blueprint(reviews_bp,url_prefix="/reviews")
 app.register_blueprint(support_bp,url_prefix="/support")
 app.register_blueprint(stats_bp, url_prefix="/stats")
 app.register_blueprint(chat_bp, url_prefix="/chat")
+app.register_blueprint(returns_bp, url_prefix="/returns")
+app.register_blueprint(tickets_bp, url_prefix="/tickets")
+app.register_blueprint(addresses_bp, url_prefix="/addresses")
 
 @app.route("/")
 def home():

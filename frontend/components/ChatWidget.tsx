@@ -16,6 +16,13 @@ type BotMessage = { role: "user" | "assistant"; content: string };
 
 type Mode = "bot" | "human";
 
+type PendingConfirm = {
+  sessionId: number;
+  action: string;
+  args: Record<string, unknown>;
+  summary: string;
+};
+
 export default function ChatWidget() {
   const [chatOpen, setChatOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("bot");
@@ -24,6 +31,9 @@ export default function ChatWidget() {
   const [botMessages, setBotMessages] = useState<BotMessage[]>([]);
   const [botInput, setBotInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const sessionRef = useRef<number | null>(
     typeof window !== "undefined" && localStorage.getItem("chat_session_id")
       ? Number(localStorage.getItem("chat_session_id"))
@@ -50,6 +60,79 @@ export default function ChatWidget() {
   };
 
   // ---------------- Bot streaming ----------------
+
+  const appendToLastAssistant = (chunk: string) => {
+    setBotMessages((m) => {
+      const copy = [...m];
+      copy[copy.length - 1] = {
+        role: "assistant",
+        content: copy[copy.length - 1].content + chunk,
+      };
+      return copy;
+    });
+    setTimeout(() => scrollToBottom(), 0);
+  };
+
+  /**
+   * Read an SSE response from /chat/stream or /chat/resume. Streams tokens into
+   * the current assistant bubble, tracks the session id, and handles the Phase 2
+   * `interrupt` (confirm card) and `escalated` (switch to Human tab) frames.
+   */
+  const readSse = async (res: Response) => {
+    if (!res.ok || !res.body) {
+      const json = await res.json().catch(() => ({}));
+      throw new Error(json?.error ?? `Chat failed (${res.status})`);
+    }
+
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+
+      const frames = buf.split("\n\n");
+      buf = frames.pop() ?? "";
+
+      for (const frame of frames) {
+        const ev = /^event:\s*(.+)$/m.exec(frame)?.[1];
+        const dataLine = /^data:\s*(.*)$/m.exec(frame)?.[1] ?? "";
+        let payload: any = {};
+        try {
+          payload = JSON.parse(dataLine);
+        } catch {
+          /* ignore non-JSON frames */
+        }
+
+        if (ev === "session" && payload.session_id) {
+          sessionRef.current = payload.session_id;
+          localStorage.setItem("chat_session_id", String(payload.session_id));
+        } else if (ev === "interrupt") {
+          // HITL Kind A — the graph paused for confirmation. Render a card.
+          setPendingConfirm({
+            sessionId: sessionRef.current as number,
+            action: payload.action,
+            args: payload.args ?? {},
+            summary: payload.summary ?? "Please confirm this action.",
+          });
+          setTimeout(() => scrollToBottom(), 0);
+          return; // stop reading; resume happens on the user's choice
+        } else if (ev === "escalated") {
+          // HITL Kind B — a human is taking over this thread. Switch to the
+          // existing Human-support tab and load its history.
+          setMode("human");
+          loadMessages(getToken()).catch(() => {});
+          return;
+        } else if (ev === "done") {
+          // stream finished
+        } else if (payload.token) {
+          appendToLastAssistant(payload.token);
+        }
+      }
+    }
+  };
 
   const sendBot = async () => {
     const text = botInput.trim();
@@ -80,52 +163,7 @@ export default function ChatWidget() {
         },
         body: JSON.stringify({ message: text, session_id: sessionRef.current }),
       });
-
-      if (!res.ok || !res.body) {
-        const json = await res.json().catch(() => ({}));
-        throw new Error(json?.error ?? `Chat failed (${res.status})`);
-      }
-
-      const reader = res.body.getReader();
-      const dec = new TextDecoder();
-      let buf = "";
-
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buf += dec.decode(value, { stream: true });
-
-        const frames = buf.split("\n\n");
-        buf = frames.pop() ?? "";
-
-        for (const frame of frames) {
-          const ev = /^event:\s*(.+)$/m.exec(frame)?.[1];
-          const dataLine = /^data:\s*(.*)$/m.exec(frame)?.[1] ?? "";
-          let payload: any = {};
-          try {
-            payload = JSON.parse(dataLine);
-          } catch {
-            /* ignore non-JSON frames */
-          }
-
-          if (ev === "session" && payload.session_id) {
-            sessionRef.current = payload.session_id;
-            localStorage.setItem("chat_session_id", String(payload.session_id));
-          } else if (ev === "done") {
-            // stream finished
-          } else if (payload.token) {
-            setBotMessages((m) => {
-              const copy = [...m];
-              copy[copy.length - 1] = {
-                role: "assistant",
-                content: copy[copy.length - 1].content + payload.token,
-              };
-              return copy;
-            });
-            setTimeout(() => scrollToBottom(), 0);
-          }
-        }
-      }
+      await readSse(res);
     } catch (error: any) {
       console.error("sendBot error:", error);
       setChatError(error?.message ?? "Failed to reach the assistant");
@@ -138,6 +176,120 @@ export default function ChatWidget() {
     } finally {
       setStreaming(false);
       setTimeout(() => scrollToBottom(), 50);
+    }
+  };
+
+  // Confirm / deny a HITL action → resume the paused graph, stream continuation
+  // into the current assistant bubble.
+  const resolveConfirm = async (approved: boolean) => {
+    if (!pendingConfirm) return;
+    const { sessionId } = pendingConfirm;
+    setPendingConfirm(null);
+
+    const token = getToken();
+    if (!token) return;
+
+    // reuse the still-open assistant bubble (the one that showed "…")
+    setStreaming(true);
+    try {
+      const res = await fetch(`${baseURL}/chat/resume`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ session_id: sessionId, approved }),
+      });
+      await readSse(res);
+    } catch (error: any) {
+      console.error("resolveConfirm error:", error);
+      setChatError(error?.message ?? "Failed to complete the action");
+    } finally {
+      setStreaming(false);
+      setTimeout(() => scrollToBottom(), 50);
+    }
+  };
+
+  // "Talk to a human" → send a handoff message through the bot, which routes to
+  // the Support agent and escalates.
+  const talkToHuman = async () => {
+    if (streaming) return;
+    setBotInput("");
+    setBotMessages((m) => [
+      ...m,
+      { role: "user", content: "I'd like to talk to a human agent." },
+      { role: "assistant", content: "" },
+    ]);
+    const token = getToken();
+    if (!token) {
+      setChatError("You must be logged in to chat.");
+      return;
+    }
+    setStreaming(true);
+    setTimeout(() => scrollToBottom(), 10);
+    try {
+      const res = await fetch(`${baseURL}/chat/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          message: "I'd like to talk to a human agent.",
+          session_id: sessionRef.current,
+        }),
+      });
+      await readSse(res);
+    } catch (error: any) {
+      console.error("talkToHuman error:", error);
+      setChatError(error?.message ?? "Failed to reach the assistant");
+    } finally {
+      setStreaming(false);
+    }
+  };
+
+  // Image upload for a damaged-item report (story 8) → files a ticket with the
+  // photo via multipart POST /tickets.
+  const uploadDamagedItem = async (file: File) => {
+    const token = getToken();
+    if (!token) {
+      setChatError("You must be logged in to upload.");
+      return;
+    }
+    setUploading(true);
+    setChatError(null);
+    try {
+      const form = new FormData();
+      form.append("subject", "Damaged item report (from chat)");
+      form.append("category", "damaged");
+      if (sessionRef.current) form.append("chat_id", String(sessionRef.current));
+      form.append("attachment", file);
+
+      const res = await fetch(`${baseURL}/tickets`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error ?? `Upload failed (${res.status})`);
+
+      setBotMessages((m) => [
+        ...m,
+        {
+          role: "assistant",
+          content:
+            "📎 Thanks — I've attached your photo to a support ticket (#" +
+            (json?.id ?? "?") +
+            "). Tell me what happened and I'll help from here.",
+        },
+      ]);
+      setTimeout(() => scrollToBottom(), 20);
+    } catch (error: any) {
+      console.error("uploadDamagedItem error:", error);
+      setChatError(error?.message ?? "Failed to upload the image");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -412,6 +564,29 @@ export default function ChatWidget() {
                     </div>
                   );
                 })}
+
+                {/* HITL Kind A — confirm / deny card */}
+                {pendingConfirm && (
+                  <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 dark:border-amber-500/40 dark:bg-amber-500/10">
+                    <p className="text-sm font-medium text-slate-800 dark:text-slate-100">
+                      {pendingConfirm.summary}
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        onClick={() => resolveConfirm(true)}
+                        className="rounded-lg bg-amber-400 px-3 py-1.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => resolveConfirm(false)}
+                        className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -472,25 +647,53 @@ export default function ChatWidget() {
                 Log in to chat.
               </div>
             ) : mode === "bot" ? (
-              <div className="flex gap-2">
-                <textarea
-                  value={botInput}
-                  onChange={(event) => setBotInput(event.target.value)}
-                  onKeyDown={onBotKeyDown}
-                  placeholder="Message the assistant… (Enter to send)"
-                  className="h-12 flex-1 resize-none rounded-lg border border-sky-200 p-2 focus:ring-2 focus:ring-amber-400 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                />
-                <button
-                  onClick={sendBot}
-                  disabled={streaming || botInput.trim() === ""}
-                  className={`rounded-lg px-4 transition ${
-                    streaming
-                      ? "bg-slate-400 text-white"
-                      : "bg-amber-400 text-slate-950 hover:bg-amber-300"
-                  }`}
-                >
-                  {streaming ? "…" : "Send"}
-                </button>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 text-xs">
+                  <button
+                    onClick={talkToHuman}
+                    disabled={streaming}
+                    className="font-medium text-sky-700 underline-offset-2 hover:underline disabled:opacity-50 dark:text-sky-300"
+                  >
+                    🙋 Talk to a human
+                  </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="font-medium text-sky-700 underline-offset-2 hover:underline disabled:opacity-50 dark:text-sky-300"
+                  >
+                    {uploading ? "Uploading…" : "📎 Attach photo (damaged item)"}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) uploadDamagedItem(f);
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <textarea
+                    value={botInput}
+                    onChange={(event) => setBotInput(event.target.value)}
+                    onKeyDown={onBotKeyDown}
+                    placeholder="Message the assistant… (Enter to send)"
+                    className="h-12 flex-1 resize-none rounded-lg border border-sky-200 p-2 focus:ring-2 focus:ring-amber-400 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  />
+                  <button
+                    onClick={sendBot}
+                    disabled={streaming || botInput.trim() === ""}
+                    className={`rounded-lg px-4 transition ${
+                      streaming
+                        ? "bg-slate-400 text-white"
+                        : "bg-amber-400 text-slate-950 hover:bg-amber-300"
+                    }`}
+                  >
+                    {streaming ? "…" : "Send"}
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="flex gap-2">

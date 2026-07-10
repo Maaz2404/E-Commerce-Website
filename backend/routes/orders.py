@@ -119,6 +119,74 @@ def get_order_payments(user, order_id):
         conn.close()
 
 
+# 3️⃣.6 Cancel one of the user's own orders (Phase 2) — pre-shipment only.
+@orders_bp.route("/<int:order_id>/cancel", methods=["POST"], strict_slashes=False)
+@token_required
+def cancel_order(user, order_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT status FROM orders WHERE id = %s AND user_id = %s",
+                    (order_id, user["id"]))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": "order not found"}), 404
+        if row["status"] not in ("pending", "paid"):        # pre-shipment only
+            return jsonify({"error": f"cannot cancel an order in status {row['status']}"}), 409
+        cur.execute("UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = %s",
+                    (order_id,))
+        conn.commit()
+        return jsonify({"id": order_id, "status": "cancelled"}), 200
+    finally:
+        cur.close()
+        conn.close()
+
+
+# 3️⃣.7 Modify one of the user's own orders (Phase 2) — only while pending/paid.
+# Demo-grade: allows editing simple mutable fields (status transitions the user
+# is permitted to make are limited; here we accept an optional shipping note via
+# a generic field set). Foreign / shipped orders are rejected.
+@orders_bp.route("/<int:order_id>", methods=["PATCH"], strict_slashes=False)
+@token_required
+def modify_order(user, order_id):
+    data = request.get_json() or {}
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT status FROM orders WHERE id = %s AND user_id = %s",
+                    (order_id, user["id"]))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": "order not found"}), 404
+        if row["status"] not in ("pending", "paid"):
+            return jsonify({"error": f"cannot modify an order in status {row['status']}"}), 409
+
+        # Only a small, safe set of fields is user-modifiable pre-shipment.
+        allowed = {"status": "status = %s"}
+        sets, values = [], []
+        for key, sql in allowed.items():
+            if key in data and data[key] is not None:
+                if key == "status" and data[key] not in ("pending", "paid", "cancelled"):
+                    return jsonify({"error": "invalid status transition"}), 400
+                sets.append(sql)
+                values.append(data[key])
+        if not sets:
+            return jsonify({"error": "no modifiable fields provided"}), 400
+
+        values.append(order_id)
+        cur.execute(
+            f"UPDATE orders SET {', '.join(sets)}, updated_at = NOW() "
+            f"WHERE id = %s RETURNING id, status, total_amount, updated_at",
+            tuple(values),
+        )
+        updated = cur.fetchone()
+        conn.commit()
+        return jsonify({"message": "Order modified", "order": updated}), 200
+    finally:
+        cur.close()
+        conn.close()
+
+
 # 4️⃣ Update Order Status (Admin Only)
 @orders_bp.route("/<int:order_id>/status", methods=["PATCH"])
 @token_required

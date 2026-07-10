@@ -1,8 +1,50 @@
 from flask import Blueprint, request, jsonify
 from database import get_connection
 from auth_middleware import token_required, admin_required
+from utils.place_order import validate_coupon
 
 coupons_bp = Blueprint("coupons", __name__)
+
+
+# ---------------------------------------------------------
+# Phase 2: validate a coupon for the current user (+ optional order total).
+# Reuses utils/place_order.validate_coupon — does NOT reimplement coupon rules.
+# ---------------------------------------------------------
+@coupons_bp.route("/validate", methods=["POST"], strict_slashes=False)
+@token_required
+def validate(user):
+    data = request.get_json() or {}
+    code = data.get("code")
+    order_total = data.get("order_total")   # optional
+    if not code:
+        return jsonify({"valid": False, "message": "coupon code required"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        result = validate_coupon(conn, cur, user["id"], code)
+    finally:
+        cur.close()
+        conn.close()
+
+    # Compute a capped discount preview when an order total is supplied.
+    if result.get("valid") and order_total is not None:
+        try:
+            total = float(order_total)
+            dtype = (result.get("discount_type") or "").lower()
+            dval = float(result.get("discount_value") or 0)
+            if dtype in ("percent", "percentage", "pct"):
+                discount = round((dval / 100) * total, 2)
+            else:
+                discount = round(dval, 2)
+            discount = min(discount, total)
+            result["discount_amount"] = discount
+            result["order_total"] = total
+            result["final_total"] = round(total - discount, 2)
+        except (TypeError, ValueError):
+            pass
+
+    return jsonify(result), 200
 
 
 @coupons_bp.route("/create", methods=["POST"])
